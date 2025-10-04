@@ -8,6 +8,14 @@ import Home from "./pages/Home";
 import Watch from "./pages/Watch";
 import Studio from "./pages/Studio";
 import Upload from "./pages/Upload";
+import Shorts from "./pages/Shorts";
+import Explore from "./pages/Explore";
+import Subscriptions from "./pages/Subscriptions";
+import History from "./pages/History";
+import Liked from "./pages/Liked";
+import Trending from "./pages/Trending";
+import Settings from "./pages/Settings";
+import Channel from "./pages/Channel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,15 +30,16 @@ const App = () => (
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/watch/:id" element={<Watch />} />
+            <Route path="/shorts" element={<Shorts />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/liked" element={<Liked />} />
+            <Route path="/trending" element={<Trending />} />
             <Route path="/studio" element={<Studio />} />
             <Route path="/upload" element={<Upload />} />
-            <Route path="/explore" element={<Home />} />
-            <Route path="/shorts" element={<Home />} />
-            <Route path="/history" element={<Home />} />
-            <Route path="/liked" element={<Home />} />
-            <Route path="/trending" element={<Home />} />
-            <Route path="/subscriptions" element={<Home />} />
-            <Route path="/settings" element={<Home />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/channel/:id" element={<Channel />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
