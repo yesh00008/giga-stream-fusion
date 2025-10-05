@@ -1,4 +1,4 @@
-import { Home, Compass, PlaySquare, Clock, ThumbsUp, TrendingUp, Folder, BarChart3, Upload, Settings } from "lucide-react";
+import { Home, Compass, PlaySquare, Clock, ThumbsUp, TrendingUp, Folder, BarChart3, Upload, Settings, Radio, MessageSquare, List, Film } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -16,14 +16,17 @@ import gigaLogo from "@/assets/giga-logo.png";
 const mainItems = [
   { title: "Home", url: "/", icon: Home },
   { title: "Explore", url: "/explore", icon: Compass },
-  { title: "Shorts", url: "/shorts", icon: PlaySquare },
+  { title: "Shorts", url: "/shorts", icon: Film },
+  { title: "Live", url: "/live", icon: Radio },
+  { title: "Subscriptions", url: "/subscriptions", icon: Folder },
 ];
 
 const libraryItems = [
   { title: "History", url: "/history", icon: Clock },
   { title: "Liked Videos", url: "/liked", icon: ThumbsUp },
+  { title: "Playlists", url: "/playlists", icon: List },
+  { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Trending", url: "/trending", icon: TrendingUp },
-  { title: "Subscriptions", url: "/subscriptions", icon: Folder },
 ];
 
 const studioItems = [

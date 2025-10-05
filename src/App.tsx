@@ -16,6 +16,11 @@ import Liked from "./pages/Liked";
 import Trending from "./pages/Trending";
 import Settings from "./pages/Settings";
 import Channel from "./pages/Channel";
+import Live from "./pages/Live";
+import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
+import Playlists from "./pages/Playlists";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +45,11 @@ const App = () => (
             <Route path="/upload" element={<Upload />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/channel/:id" element={<Channel />} />
+            <Route path="/live" element={<Live />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/playlists" element={<Playlists />} />
+            <Route path="/search" element={<SearchResults />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
