@@ -1,4 +1,4 @@
-import { Home, Compass, PlaySquare, Clock, ThumbsUp, TrendingUp, Folder, BarChart3, Upload, Settings, Radio, MessageSquare, List, Film } from "lucide-react";
+import { Home, Compass, PlaySquare, Clock, ThumbsUp, TrendingUp, Folder, BarChart3, Upload, Settings, Radio, MessageSquare, List, Film, Users, Library } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -22,9 +22,11 @@ const mainItems = [
 ];
 
 const libraryItems = [
+  { title: "Library", url: "/library", icon: Library },
   { title: "History", url: "/history", icon: Clock },
   { title: "Liked Videos", url: "/liked", icon: ThumbsUp },
   { title: "Playlists", url: "/playlists", icon: List },
+  { title: "Community", url: "/community", icon: Users },
   { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Trending", url: "/trending", icon: TrendingUp },
 ];

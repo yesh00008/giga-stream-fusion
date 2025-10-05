@@ -21,6 +21,8 @@ import Messages from "./pages/Messages";
 import Notifications from "./pages/Notifications";
 import Playlists from "./pages/Playlists";
 import SearchResults from "./pages/SearchResults";
+import Community from "./pages/Community";
+import Library from "./pages/Library";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +52,8 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/playlists" element={<Playlists />} />
             <Route path="/search" element={<SearchResults />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/library" element={<Library />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
