@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Send, MoreVertical, Phone, Video, Info, Image, Smile } from "lucide-react";
+import { Search, Send, MoreVertical, Phone, Video, Info, Image, Smile, Heart, Camera, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -27,10 +27,15 @@ export default function Messages() {
 
   return (
     <div className="flex-1 overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-3.5rem)]">
-      {/* Conversations List */}
+      {/* Conversations List - Instagram Style */}
       <div className="w-full lg:w-80 xl:w-96 border-r border-border bg-card flex flex-col">
         <div className="p-3 sm:p-4 border-b border-border">
-          <h1 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Messages</h1>
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h1 className="text-lg sm:text-xl font-bold">Messages</h1>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreVertical size={20} />
+            </Button>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input 
@@ -53,11 +58,11 @@ export default function Messages() {
                 }`}
               >
                 <div className="relative flex-shrink-0">
-                  <Avatar className="w-11 h-11 sm:w-12 sm:h-12">
+                  <Avatar className="w-14 h-14">
                     <AvatarFallback className="gradient-primary text-white text-sm">{conv.avatar}</AvatarFallback>
                   </Avatar>
                   {conv.online && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></div>
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-card"></div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -78,74 +83,112 @@ export default function Messages() {
         </ScrollArea>
       </div>
 
-      {/* Chat Area */}
+      {/* Chat Area - Instagram Style */}
       <div className="flex-1 flex flex-col bg-background">
         {/* Chat Header */}
-        <div className="h-14 sm:h-16 border-b border-border flex items-center justify-between px-3 sm:px-4 bg-card">
+        <div className="h-16 border-b border-border flex items-center justify-between px-4 bg-card">
           <div className="flex items-center gap-3">
-            <Avatar className="w-9 h-9 sm:w-10 sm:h-10">
-              <AvatarFallback className="gradient-primary text-white text-sm">{selectedChat.avatar}</AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="w-10 h-10">
+                <AvatarFallback className="gradient-primary text-white text-sm">{selectedChat.avatar}</AvatarFallback>
+              </Avatar>
+              {selectedChat.online && (
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"></div>
+              )}
+            </div>
             <div>
-              <p className="font-semibold text-foreground text-sm sm:text-base">{selectedChat.name}</p>
-              <p className="text-xs text-muted-foreground">{selectedChat.online ? "Active now" : "Offline"}</p>
+              <p className="font-semibold text-foreground text-base">{selectedChat.name}</p>
+              <p className="text-xs text-muted-foreground">{selectedChat.online ? "Active now" : "Active 2h ago"}</p>
             </div>
           </div>
-          <div className="flex gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
-              <Phone size={16} className="sm:w-4 sm:h-4" />
+          <div className="flex gap-2">
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent">
+              <Phone size={20} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
-              <Video size={16} className="sm:w-4 sm:h-4" />
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent">
+              <Video size={20} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
-              <Info size={16} className="sm:w-4 sm:h-4" />
+            <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-accent">
+              <Info size={20} />
             </Button>
           </div>
         </div>
 
-        {/* Messages */}
-        <ScrollArea className="flex-1 p-3 sm:p-4">
-          <div className="space-y-3 sm:space-y-4 max-w-4xl mx-auto">
+        {/* Messages - Instagram Style */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-2 max-w-4xl mx-auto">
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sent ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] sm:max-w-[70%] ${msg.sent ? "order-2" : "order-1"}`}>
+              <div key={msg.id} className={`flex gap-2 ${msg.sent ? "justify-end" : "justify-start"} group`}>
+                {!msg.sent && (
+                  <Avatar className="w-7 h-7 mt-auto mb-1">
+                    <AvatarFallback className="gradient-primary text-white text-xs">{selectedChat.avatar}</AvatarFallback>
+                  </Avatar>
+                )}
+                <div className={`flex items-end gap-2 ${msg.sent ? "flex-row-reverse" : "flex-row"}`}>
                   <div
-                    className={`rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 ${
+                    className={`max-w-[300px] rounded-3xl px-4 py-2.5 ${
                       msg.sent
-                        ? "gradient-primary text-white"
-                        : "bg-card text-foreground border border-border"
+                        ? "bg-primary text-white"
+                        : "bg-muted text-foreground"
                     }`}
                   >
-                    <p className="text-xs sm:text-sm">{msg.text}</p>
+                    <p className="text-sm">{msg.text}</p>
                   </div>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 px-2">
-                    {msg.time}
-                  </p>
+                  {msg.sent && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-smooth"
+                    >
+                      <Heart size={14} />
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </ScrollArea>
 
-        {/* Message Input */}
-        <div className="border-t border-border p-3 sm:p-4 bg-card">
-          <div className="flex gap-2 max-w-4xl mx-auto">
-            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
-              <Image size={18} className="sm:w-5 sm:h-5" />
+        {/* Message Input - Instagram Style */}
+        <div className="border-t border-border p-4 bg-card">
+          <div className="flex gap-3 max-w-4xl mx-auto items-center">
+            <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-accent rounded-full">
+              <Camera size={24} />
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
-              <Smile size={18} className="sm:w-5 sm:h-5" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-accent rounded-full">
+              <Image size={24} />
             </Button>
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              className="flex-1 h-9 sm:h-10 text-sm"
-            />
-            <Button variant="gradient" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 flex-shrink-0">
-              <Send size={16} className="sm:w-4 sm:h-4" />
+            <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-accent rounded-full">
+              <Mic size={24} />
             </Button>
+            <div className="flex-1 relative">
+              <Input
+                placeholder="Message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                className="h-10 rounded-full border-border pr-10"
+              />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
+              >
+                <Smile size={20} />
+              </Button>
+            </div>
+            {newMessage ? (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary font-semibold hover:bg-transparent"
+              >
+                Send
+              </Button>
+            ) : (
+              <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 hover:bg-accent rounded-full">
+                <Heart size={24} />
+              </Button>
+            )}
           </div>
         </div>
       </div>
