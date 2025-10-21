@@ -8,52 +8,98 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 30 40% 98%;
-    --foreground: 20 14% 10%;
+    /* Claude.ai inspired theme - Warm neutrals with coral accents */
+    --background: 30 15% 97%;
+    --foreground: 24 10% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 14% 10%;
+    --card-foreground: 24 10% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14% 10%;
+    --popover-foreground: 24 10% 10%;
 
-    --primary: 25 95% 53%;
+    --primary: 16 85% 58%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 30 25% 92%;
-    --secondary-foreground: 20 14% 10%;
+    --secondary: 30 10% 93%;
+    --secondary-foreground: 24 10% 10%;
 
-    --muted: 30 30% 96%;
-    --muted-foreground: 20 8% 40%;
+    --muted: 30 10% 95%;
+    --muted-foreground: 24 6% 46%;
 
-    --accent: 25 90% 58%;
+    --accent: 16 82% 62%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 30 20% 90%;
-    --input: 30 25% 94%;
-    --ring: 25 95% 53%;
+    --border: 30 8% 88%;
+    --input: 30 8% 90%;
+    --ring: 16 85% 58%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 30 35% 99%;
-    --sidebar-foreground: 20 14% 15%;
-    --sidebar-primary: 25 95% 53%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 24 10% 10%;
+    --sidebar-primary: 16 85% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 30% 96%;
-    --sidebar-accent-foreground: 20 14% 10%;
-    --sidebar-border: 30 20% 92%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-accent: 30 10% 96%;
+    --sidebar-accent-foreground: 24 10% 10%;
+    --sidebar-border: 30 8% 92%;
+    --sidebar-ring: 16 85% 58%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(25 95% 53%), hsl(30 90% 60%));
-    --gradient-secondary: linear-gradient(145deg, hsl(30 70% 75%), hsl(35 50% 88%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(30 40% 98%));
-    --glow-primary: 0 8px 24px hsl(25 95% 53% / 0.12);
-    --glow-secondary: 0 4px 16px hsl(30 60% 70% / 0.1);
+    --gradient-primary: linear-gradient(135deg, hsl(16 85% 58%), hsl(20 82% 62%));
+    --gradient-secondary: linear-gradient(145deg, hsl(30 15% 98%), hsl(30 10% 95%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(30 15% 98%));
+    --glow-primary: 0 8px 32px hsl(16 85% 58% / 0.15);
+    --glow-secondary: 0 4px 16px hsl(16 60% 70% / 0.08);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .dark {
+    --background: 24 10% 10%;
+    --foreground: 30 10% 95%;
+
+    --card: 24 8% 12%;
+    --card-foreground: 30 10% 95%;
+
+    --popover: 24 8% 12%;
+    --popover-foreground: 30 10% 95%;
+
+    --primary: 16 85% 58%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 24 6% 18%;
+    --secondary-foreground: 30 10% 95%;
+
+    --muted: 24 6% 16%;
+    --muted-foreground: 30 6% 64%;
+
+    --accent: 16 82% 62%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 24 6% 20%;
+    --input: 24 6% 18%;
+    --ring: 16 85% 58%;
+
+    --sidebar-background: 24 8% 12%;
+    --sidebar-foreground: 30 10% 95%;
+    --sidebar-primary: 16 85% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 6% 16%;
+    --sidebar-accent-foreground: 30 10% 95%;
+    --sidebar-border: 24 6% 20%;
+    --sidebar-ring: 16 85% 58%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(16 85% 58%), hsl(20 82% 62%));
+    --gradient-secondary: linear-gradient(145deg, hsl(24 8% 12%), hsl(24 6% 16%));
+    --gradient-card: linear-gradient(145deg, hsl(24 8% 12%), hsl(24 6% 14%));
+    --glow-primary: 0 8px 32px hsl(16 85% 58% / 0.2);
+    --glow-secondary: 0 4px 16px hsl(16 60% 50% / 0.1);
   }
 }
 
@@ -64,6 +110,8 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: -0.01em;
   }
   
   .gradient-primary {
@@ -86,6 +134,48 @@ All colors MUST be HSL.
     transition: var(--transition-smooth);
   }
   
+  /* Claude.ai inspired button styles */
+  .btn-claude {
+    @apply bg-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg font-medium shadow-sm;
+  }
+  
+  .btn-claude-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 rounded-lg font-medium;
+  }
+  
+  /* Soft shadows like Claude */
+  .shadow-claude {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+  
+  .shadow-claude-lg {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
+  }
+  
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Touch-friendly tap targets */
+  @media (max-width: 768px) {
+    button, a, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
+  
+  /* Prevent text selection on touch */
+  .select-none {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
   /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 10px;
@@ -104,5 +194,31 @@ All colors MUST be HSL.
   
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground));
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+  }
+  
+  /* Character animation */
+  @keyframes bounce-subtle {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+  
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s ease-in-out infinite;
+  }
+  
+  .animate-bounce-subtle:hover {
+    animation: bounce-subtle 0.6s ease-in-out infinite;
   }
 }

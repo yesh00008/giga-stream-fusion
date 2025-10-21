@@ -1,27 +1,27 @@
 import { Clock, ThumbsUp, PlaySquare, Download, Folder } from "lucide-react";
-import { VideoCard } from "@/components/VideoCard";
+import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const recentVideos = [
-  { id: "1", title: "React Advanced Patterns", channel: "Tech Master", views: "1.2M", timestamp: "2 days ago", duration: "25:30" },
-  { id: "2", title: "CSS Grid Complete Guide", channel: "Design Pro", views: "850K", timestamp: "1 week ago", duration: "18:45" },
-  { id: "3", title: "TypeScript Best Practices", channel: "Code Academy", views: "620K", timestamp: "3 days ago", duration: "32:15" },
+const recentPosts = [
+  { id: "1", title: "React Advanced Patterns", content: "Deep dive into advanced React patterns including render props, HOCs, and compound components...", author: "Tech Master", likes: "1.2K", comments: "89", timestamp: "2 days ago", image: "⚛️" },
+  { id: "2", title: "CSS Grid Complete Guide", content: "Master CSS Grid with this comprehensive guide covering all properties and real-world examples...", author: "Design Pro", likes: "850", comments: "45", timestamp: "1 week ago", image: "🎨" },
+  { id: "3", title: "TypeScript Best Practices", content: "Learn the best practices for TypeScript including type safety, generics, and advanced types...", author: "Code Academy", likes: "620", comments: "34", timestamp: "3 days ago", image: "📘" },
 ];
 
-const watchLater = [
-  { id: "4", title: "Build a Full Stack App", channel: "Developer Hub", views: "2.1M", timestamp: "4 days ago", duration: "45:20" },
-  { id: "5", title: "Advanced Node.js", channel: "Backend Pro", views: "1.5M", timestamp: "5 days ago", duration: "38:10" },
+const savedPosts = [
+  { id: "4", title: "Build a Full Stack App", content: "Complete guide to building a full stack application with React, Node.js, and MongoDB...", author: "Developer Hub", likes: "2.1K", comments: "156", timestamp: "4 days ago", image: "🚀" },
+  { id: "5", title: "Advanced Node.js", content: "Explore advanced Node.js concepts including streams, clusters, and performance optimization...", author: "Backend Pro", likes: "1.5K", comments: "98", timestamp: "5 days ago", image: "💚" },
 ];
 
-const downloads = [
-  { id: "6", title: "JavaScript ES2024 Features", channel: "JS Expert", views: "920K", timestamp: "1 week ago", duration: "22:45" },
-  { id: "7", title: "Docker Tutorial", channel: "DevOps Master", views: "780K", timestamp: "2 weeks ago", duration: "28:30" },
+const bookmarkedPosts = [
+  { id: "6", title: "JavaScript ES2024 Features", content: "Discover the latest JavaScript features and how to use them in your projects...", author: "JS Expert", likes: "920", comments: "67", timestamp: "1 week ago", image: "✨" },
+  { id: "7", title: "Docker Tutorial", content: "Complete Docker tutorial from basics to advanced containerization techniques...", author: "DevOps Master", likes: "780", comments: "52", timestamp: "2 weeks ago", image: "🐳" },
 ];
 
 export default function Library() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-3 sm:p-6">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <div className="p-4 sm:p-6">
         <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Library</h1>
 
         <Tabs defaultValue="recent" className="w-full">
@@ -32,7 +32,7 @@ export default function Library() {
             </TabsTrigger>
             <TabsTrigger value="watchlater" className="text-xs sm:text-sm gap-1 sm:gap-2">
               <PlaySquare className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>Watch Later</span>
+              <span>Saved</span>
             </TabsTrigger>
             <TabsTrigger value="liked" className="text-xs sm:text-sm gap-1 sm:gap-2">
               <ThumbsUp className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -40,7 +40,7 @@ export default function Library() {
             </TabsTrigger>
             <TabsTrigger value="downloads" className="text-xs sm:text-sm gap-1 sm:gap-2">
               <Download className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span>Downloads</span>
+              <span>Bookmarked</span>
             </TabsTrigger>
           </TabsList>
 
@@ -48,11 +48,11 @@ export default function Library() {
             <div>
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                Recently Watched
+                Recently Viewed
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {recentVideos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+                {recentPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </div>
@@ -62,11 +62,11 @@ export default function Library() {
             <div>
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
                 <PlaySquare className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                Watch Later ({watchLater.length})
+                Saved Posts ({savedPosts.length})
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {watchLater.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {savedPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </div>
@@ -76,11 +76,11 @@ export default function Library() {
             <div>
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
                 <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                Liked Videos
+                Liked Posts
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {recentVideos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {recentPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </div>
@@ -90,11 +90,11 @@ export default function Library() {
             <div>
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex items-center gap-2">
                 <Download className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                Downloaded Videos ({downloads.length})
+                Bookmarked Posts ({bookmarkedPosts.length})
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {downloads.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {bookmarkedPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </div>

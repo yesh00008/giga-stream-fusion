@@ -1,84 +1,83 @@
-import { useState } from "react";
-import { Search, Upload, Bell, MessageSquare, Radio } from "lucide-react";
+import { BellDot, Mail, Plus, PlaySquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
 
   return (
-    <header className="h-14 border-b border-border bg-card flex items-center px-2 sm:px-4 gap-2 sm:gap-4 sticky top-0 z-50">
-      <SidebarTrigger />
-      
-      <form onSubmit={handleSearch} className="flex-1 max-w-2xl mx-auto flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hidden sm:block" size={18} />
-          <Input 
-            placeholder="Search videos, channels..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-3 sm:pl-10 bg-background text-sm h-9"
-          />
+    <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-4 sticky top-0 z-50">
+      <div className="flex items-center gap-3 flex-1">
+        <div className="lg:hidden flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <span className="text-white font-bold text-sm">G</span>
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent tracking-tight">Giga</span>
         </div>
-      </form>
+      </div>
 
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-10 w-10 rounded-full hover:bg-secondary"
+            >
+              <Plus size={22} strokeWidth={2.5} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => navigate("/upload")}>
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="9" cy="9" r="2" />
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+              </svg>
+              Upload Photo
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/shorts")}>
+              <PlaySquare className="mr-2 h-4 w-4" />
+              Create Short
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/upload")}>
+              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+              Write Post
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button
+          size="icon"
           variant="ghost"
-          size="sm"
-          onClick={() => navigate("/live")}
-          className="hidden md:flex h-9 gap-2"
+          onClick={() => navigate("/notifications")}
+          className="relative h-10 w-10 rounded-full hover:bg-secondary"
         >
-          <Radio className="w-4 h-4 text-red-500" />
-          <span className="text-sm">Go Live</span>
+          <BellDot size={20} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background"></span>
         </Button>
 
         <Button
           size="icon"
           variant="ghost"
-          onClick={() => navigate("/upload")}
-          className="h-9 w-9"
-        >
-          <Upload size={18} />
-        </Button>
-
-        <Button 
-          size="icon" 
-          variant="ghost" 
           onClick={() => navigate("/messages")}
-          className="relative hidden sm:flex h-9 w-9"
+          className="relative h-10 w-10 rounded-full hover:bg-secondary"
         >
-          <MessageSquare size={18} />
-          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[10px]">
+          <Mail size={20} />
+          <Badge className="absolute -top-0.5 -right-0.5 h-5 w-5 p-0 flex items-center justify-center bg-primary text-[10px] rounded-full border-2 border-background">
             3
           </Badge>
         </Button>
-
-        <Button 
-          size="icon" 
-          variant="ghost" 
-          onClick={() => navigate("/notifications")}
-          className="relative h-9 w-9"
-        >
-          <Bell size={18} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-        </Button>
-
-        <Avatar className="w-8 h-8 cursor-pointer" onClick={() => navigate("/settings")}>
-          <AvatarFallback className="gradient-primary text-white text-xs">U</AvatarFallback>
-        </Avatar>
       </div>
     </header>
   );

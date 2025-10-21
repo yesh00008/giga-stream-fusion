@@ -1,43 +1,49 @@
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VideoCard } from "@/components/VideoCard";
+import { PostCard } from "@/components/PostCard";
 import { Card } from "@/components/ui/card";
 import { Bell, Share2, MoreHorizontal, Play, Grid3X3 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
-const channelVideos = [
+const authorPosts = [
   {
     id: "c1",
-    title: "Getting Started with React - Complete Tutorial",
-    channel: "Tech Tutorials",
-    views: "500K",
+    title: "Getting Started with React - Complete Guide",
+    content: "A comprehensive guide to learning React from the ground up with practical examples and best practices...",
+    author: "Tech Tutorials",
+    likes: "1.2K",
+    comments: "89",
     timestamp: "1 week ago",
-    duration: "45:30",
+    image: "⚛️",
   },
   {
     id: "c2",
     title: "Advanced TypeScript Tips and Tricks",
-    channel: "Tech Tutorials",
-    views: "320K",
+    content: "Master TypeScript with these advanced tips that will level up your coding skills...",
+    author: "Tech Tutorials",
+    likes: "856",
+    comments: "67",
     timestamp: "2 weeks ago",
-    duration: "32:15",
+    image: "📘",
   },
   {
     id: "c3",
     title: "Building Modern Web Apps with Vite",
-    channel: "Tech Tutorials",
-    views: "450K",
+    content: "Learn how to build lightning-fast web applications using Vite and modern development tools...",
+    author: "Tech Tutorials",
+    likes: "734",
+    comments: "45",
     timestamp: "3 weeks ago",
-    duration: "28:45",
+    image: "⚡",
   },
 ];
 
-const playlists = [
-  { id: 1, name: "React Tutorials", videos: 25, thumbnail: "RT" },
-  { id: 2, name: "TypeScript Mastery", videos: 18, thumbnail: "TM" },
-  { id: 3, name: "Web Development", videos: 42, thumbnail: "WD" },
-  { id: 4, name: "Design Patterns", videos: 15, thumbnail: "DP" },
+const collections = [
+  { id: 1, name: "React Tutorials", posts: 25, thumbnail: "RT" },
+  { id: 2, name: "TypeScript Mastery", posts: 18, thumbnail: "TM" },
+  { id: 3, name: "Web Development", posts: 42, thumbnail: "WD" },
+  { id: 4, name: "Design Patterns", posts: 15, thumbnail: "DP" },
 ];
 
 export default function Channel() {
@@ -62,18 +68,18 @@ export default function Channel() {
             <div className="flex flex-wrap gap-2 text-sm text-muted-foreground mb-4">
               <span>@techtutorials</span>
               <span>•</span>
-              <span>1.2M subscribers</span>
+              <span>1.2M followers</span>
               <span>•</span>
-              <span>156 videos</span>
+              <span>156 posts</span>
             </div>
             <p className="text-muted-foreground mb-4 max-w-2xl">
-              Welcome to Tech Tutorials! Learn web development, programming, and more with easy-to-follow tutorials.
-              New videos every week! 🚀
+              Welcome to Tech Tutorials! Learn web development, programming, and more with easy-to-follow posts.
+              New content every week! 🚀
             </p>
             <div className="flex flex-wrap gap-2">
               <Button variant="gradient" size="lg">
                 <Bell className="mr-2" size={18} />
-                Subscribe
+                Follow
               </Button>
               <Button variant="outline" size="lg">
                 <Share2 className="mr-2" size={18} />
@@ -91,21 +97,21 @@ export default function Channel() {
           <TabsList className="mb-6 w-full justify-start overflow-x-auto">
             <TabsTrigger value="videos">
               <Play className="mr-2" size={16} />
-              Videos
+              Posts
             </TabsTrigger>
             <TabsTrigger value="shorts">Shorts</TabsTrigger>
             <TabsTrigger value="playlists">
               <Grid3X3 className="mr-2" size={16} />
-              Playlists
+              Collections
             </TabsTrigger>
             <TabsTrigger value="community">Community</TabsTrigger>
             <TabsTrigger value="about">About</TabsTrigger>
           </TabsList>
 
           <TabsContent value="videos" className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {channelVideos.map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {authorPosts.map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>
@@ -124,14 +130,14 @@ export default function Channel() {
 
           <TabsContent value="playlists" className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {playlists.map((playlist) => (
-                <Card key={playlist.id} className="gradient-card overflow-hidden cursor-pointer hover:scale-105 transition-smooth">
+              {collections.map((collection) => (
+                <Card key={collection.id} className="gradient-card overflow-hidden cursor-pointer hover:scale-105 transition-smooth">
                   <div className="aspect-video bg-muted flex items-center justify-center">
-                    <div className="text-6xl font-bold text-primary opacity-20">{playlist.thumbnail}</div>
+                    <div className="text-6xl font-bold text-primary opacity-20">{collection.thumbnail}</div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold mb-1">{playlist.name}</h3>
-                    <p className="text-sm text-muted-foreground">{playlist.videos} videos</p>
+                    <h3 className="font-semibold mb-1">{collection.name}</h3>
+                    <p className="text-sm text-muted-foreground">{collection.posts} posts</p>
                   </div>
                 </Card>
               ))}
@@ -149,7 +155,7 @@ export default function Channel() {
               <div>
                 <h3 className="font-semibold mb-2">Description</h3>
                 <p className="text-muted-foreground">
-                  Welcome to Tech Tutorials! We create high-quality programming tutorials and web development courses.
+                  Welcome to Tech Tutorials! We create high-quality programming content and web development guides.
                   Join our community of 1.2M+ developers learning to code!
                 </p>
               </div>

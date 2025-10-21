@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Play, Bookmark, Music2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, MoreVertical, Volume2, VolumeX, Play, RotateCcw, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -137,89 +137,97 @@ export default function Shorts() {
             </div>
           </div>
 
-          {/* Right Actions - Instagram Reels Style */}
-          <div className="absolute right-3 bottom-24 z-20 flex flex-col gap-5">
+          {/* Right Actions - YouTube Shorts Style */}
+          <div className="absolute right-2 sm:right-4 bottom-20 sm:bottom-24 z-20 flex flex-col gap-3 sm:gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handleLike(short.id)}
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent group"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
             >
-              <div className="w-12 h-12 flex items-center justify-center">
-                <Heart 
-                  size={28} 
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <ThumbsUp 
+                  size={20} 
                   className={cn(
-                    "transition-smooth",
+                    "transition-smooth sm:w-6 sm:h-6",
                     liked.includes(short.id) 
-                      ? "fill-primary text-primary scale-110" 
+                      ? "fill-white text-white scale-110" 
                       : "text-white group-hover:scale-110"
                   )} 
                 />
               </div>
-              <span className="text-xs text-white font-semibold">
-                {(short.likes + (liked.includes(short.id) ? 1 : 0) / 1000).toFixed(1)}K
+              <span className="text-[10px] sm:text-xs text-white font-semibold drop-shadow-lg">
+                {Math.floor(short.likes / 1000)}K
               </span>
             </Button>
             
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowComments(true)}
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent group"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group -mt-2 sm:-mt-3 w-auto"
             >
-              <div className="w-12 h-12 flex items-center justify-center">
-                <MessageCircle size={28} className="text-white group-hover:scale-110 transition-smooth" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <ThumbsDown size={20} className="text-white group-hover:scale-110 transition-smooth sm:w-6 sm:h-6" />
               </div>
-              <span className="text-xs text-white font-semibold">{short.comments}</span>
+              <span className="text-[10px] sm:text-xs text-white font-semibold drop-shadow-lg">Dislike</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowComments(true)}
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <MessageCircle size={20} className="text-white group-hover:scale-110 transition-smooth sm:w-6 sm:h-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs text-white font-semibold drop-shadow-lg">{short.comments}</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <Share2 size={20} className="text-white group-hover:scale-110 transition-smooth sm:w-6 sm:h-6" />
+              </div>
+              <span className="text-[10px] sm:text-xs text-white font-semibold drop-shadow-lg">Share</span>
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handleSave(short.id)}
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent group"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
             >
-              <div className="w-12 h-12 flex items-center justify-center">
-                <Bookmark 
-                  size={28} 
-                  className={cn(
-                    "transition-smooth",
-                    saved.includes(short.id) 
-                      ? "fill-white text-white" 
-                      : "text-white group-hover:scale-110"
-                  )} 
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <RotateCcw 
+                  size={20} 
+                  className="text-white group-hover:scale-110 transition-smooth sm:w-6 sm:h-6" 
                 />
               </div>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent group"
-            >
-              <div className="w-12 h-12 flex items-center justify-center">
-                <Share2 size={28} className="text-white group-hover:scale-110 transition-smooth" />
-              </div>
+              <span className="text-[10px] sm:text-xs text-white font-semibold drop-shadow-lg">{saved.includes(short.id) ? 'Added' : 'Remix'}</span>
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setMuted(!muted)}
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent group"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
             >
-              <div className="w-12 h-12 flex items-center justify-center bg-black/40 rounded-full">
-                {muted ? <VolumeX size={24} className="text-white" /> : <Volume2 size={24} className="text-white" />}
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-full">
+                {muted ? <VolumeX size={18} className="text-white sm:w-5 sm:h-5" /> : <Volume2 size={18} className="text-white sm:w-5 sm:h-5" />}
               </div>
             </Button>
 
             <Button
               variant="ghost"
               size="icon"
-              className="flex flex-col gap-1 h-auto p-2 hover:bg-transparent"
+              className="flex flex-col gap-0.5 h-auto p-0 hover:bg-transparent group w-auto"
             >
-              <div className="w-12 h-12 flex items-center justify-center">
-                <MoreVertical size={28} className="text-white" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+                <MoreVertical size={20} className="text-white sm:w-6 sm:h-6" />
               </div>
             </Button>
           </div>

@@ -15,33 +15,33 @@ const stories = [
 
 export function StoriesBar() {
   return (
-    <div className="border-b border-border bg-card">
+    <div className="border-b border-border/50">
       <ScrollArea className="w-full">
-        <div className="flex gap-4 p-4 min-w-max">
+        <div className="flex gap-4 sm:gap-5 p-4 sm:p-5 min-w-max overflow-x-auto scrollbar-hide">
           {/* Your Story */}
-          <div className="flex flex-col items-center gap-2 cursor-pointer min-w-[80px] group">
+          <div className="flex flex-col items-center gap-2 cursor-pointer min-w-[72px] group flex-shrink-0">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-muted to-accent flex items-center justify-center border-2 border-border group-hover:scale-105 transition-smooth">
-                <Plus size={28} className="text-primary" />
+              <div className="w-16 h-16 rounded-full bg-muted/40 flex items-center justify-center border border-border/50">
+                <Plus size={24} className="text-muted-foreground" />
               </div>
-              <div className="absolute bottom-0 right-0 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-2 border-card">
-                <Plus size={14} className="text-white" />
+              <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-background">
+                <Plus size={11} className="text-white" />
               </div>
             </div>
-            <span className="text-xs font-medium text-foreground">Your Story</span>
+            <span className="text-xs text-foreground/80 text-center leading-tight">Your Story</span>
           </div>
 
           {/* Stories from others */}
           {stories.map((story) => (
-            <div key={story.id} className="flex flex-col items-center gap-2 cursor-pointer min-w-[80px] group">
+            <div key={story.id} className="flex flex-col items-center gap-2 cursor-pointer min-w-[72px] group flex-shrink-0">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full p-[3px] gradient-primary group-hover:scale-105 transition-smooth">
-                  <Avatar className="w-full h-full border-[3px] border-background">
-                    <AvatarFallback className="bg-card text-foreground font-semibold">{story.avatar}</AvatarFallback>
+                <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-br from-primary to-accent">
+                  <Avatar className="w-full h-full border-2 border-background">
+                    <AvatarFallback className="bg-muted text-foreground font-medium text-sm">{story.avatar}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground truncate max-w-[80px] group-hover:text-foreground transition-smooth">
+              <span className="text-xs text-muted-foreground truncate max-w-[72px] text-center leading-tight">
                 {story.name}
               </span>
             </div>

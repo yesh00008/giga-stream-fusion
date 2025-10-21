@@ -20,8 +20,8 @@ export default function Upload() {
   const [scheduleDate, setScheduleDate] = useState("");
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0 p-4 sm:p-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         <div>
           <h1 className="text-3xl font-bold mb-2">Upload Content</h1>
           <p className="text-muted-foreground">Share your videos with the world</p>

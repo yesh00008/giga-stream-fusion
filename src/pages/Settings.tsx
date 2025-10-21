@@ -9,8 +9,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Settings() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold mb-2">Settings</h1>
           <p className="text-muted-foreground">Manage your account and preferences</p>

@@ -1,18 +1,18 @@
 import { useSearchParams } from "react-router-dom";
-import { VideoCard } from "@/components/VideoCard";
+import { PostCard } from "@/components/PostCard";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const searchResults = {
-  videos: [
-    { id: "1", title: "React Tutorial for Beginners", channel: "Code Academy", views: "1.2M", timestamp: "2 days ago", duration: "25:30" },
-    { id: "2", title: "Advanced React Patterns", channel: "Tech Master", views: "850K", timestamp: "1 week ago", duration: "18:45" },
-    { id: "3", title: "React Performance Optimization", channel: "Developer Pro", views: "620K", timestamp: "3 days ago", duration: "32:15" },
+  posts: [
+    { id: "1", title: "React Tutorial for Beginners", content: "Learn React from scratch with this comprehensive beginner-friendly guide...", author: "Code Academy", likes: "1.2K", comments: "89", timestamp: "2 days ago", image: "⚛️" },
+    { id: "2", title: "Advanced React Patterns", content: "Master advanced React patterns including hooks, context, and custom implementations...", author: "Tech Master", likes: "850", comments: "67", timestamp: "1 week ago", image: "🚀" },
+    { id: "3", title: "React Performance Optimization", content: "Discover techniques to optimize your React applications for better performance...", author: "Developer Pro", likes: "620", comments: "45", timestamp: "3 days ago", image: "⚡" },
   ],
-  channels: [
-    { id: 1, name: "React Academy", subscribers: "2.5M", videos: 342, avatar: "RA" },
-    { id: 2, name: "Frontend Masters", subscribers: "1.8M", videos: 215, avatar: "FM" },
+  authors: [
+    { id: 1, name: "React Academy", followers: "2.5M", posts: 342, avatar: "RA" },
+    { id: 2, name: "Frontend Masters", followers: "1.8M", posts: 215, avatar: "FM" },
   ],
 };
 
@@ -30,68 +30,68 @@ export default function SearchResults() {
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-4 sm:mb-6 w-full sm:w-auto grid grid-cols-3 sm:flex">
             <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-            <TabsTrigger value="videos" className="text-xs sm:text-sm">Videos</TabsTrigger>
-            <TabsTrigger value="channels" className="text-xs sm:text-sm">Channels</TabsTrigger>
+            <TabsTrigger value="videos" className="text-xs sm:text-sm">Posts</TabsTrigger>
+            <TabsTrigger value="channels" className="text-xs sm:text-sm">Authors</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4 sm:space-y-6">
-            {/* Channels */}
+            {/* Authors */}
             <div>
-              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Channels</h2>
+              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Authors</h2>
               <div className="space-y-3 sm:space-y-4">
-                {searchResults.channels.map((channel) => (
-                  <div key={channel.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card rounded-lg border border-border">
+                {searchResults.authors.map((author) => (
+                  <div key={author.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card rounded-lg border border-border">
                     <Avatar className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                      <AvatarFallback className="gradient-primary text-white text-lg sm:text-xl">{channel.avatar}</AvatarFallback>
+                      <AvatarFallback className="gradient-primary text-white text-lg sm:text-xl">{author.avatar}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{channel.name}</h3>
+                      <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{author.name}</h3>
                       <p className="text-xs sm:text-sm text-muted-foreground">
-                        {channel.subscribers} subscribers • {channel.videos} videos
+                        {author.followers} followers • {author.posts} posts
                       </p>
                     </div>
                     <Button variant="gradient" size="sm" className="flex-shrink-0 h-8 sm:h-9 text-xs sm:text-sm">
-                      Subscribe
+                      Follow
                     </Button>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Videos */}
+            {/* Posts */}
             <div>
-              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Videos</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {searchResults.videos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Posts</h2>
+              <div className="max-w-3xl mx-auto space-y-1">
+                {searchResults.posts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="videos">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-              {searchResults.videos.map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {searchResults.posts.map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="channels">
             <div className="space-y-3 sm:space-y-4">
-              {searchResults.channels.map((channel) => (
-                <div key={channel.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card rounded-lg border border-border">
+              {searchResults.authors.map((author) => (
+                <div key={author.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card rounded-lg border border-border">
                   <Avatar className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
-                    <AvatarFallback className="gradient-primary text-white text-lg sm:text-xl">{channel.avatar}</AvatarFallback>
+                    <AvatarFallback className="gradient-primary text-white text-lg sm:text-xl">{author.avatar}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{channel.name}</h3>
+                    <h3 className="font-semibold text-foreground mb-1 text-sm sm:text-base">{author.name}</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">
-                      {channel.subscribers} subscribers • {channel.videos} videos
+                      {author.followers} followers • {author.posts} posts
                     </p>
                   </div>
                   <Button variant="gradient" size="sm" className="flex-shrink-0 h-8 sm:h-9 text-xs sm:text-sm">
-                    Subscribe
+                    Follow
                   </Button>
                 </div>
               ))}

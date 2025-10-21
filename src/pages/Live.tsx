@@ -24,8 +24,8 @@ export default function Live() {
   const [isLive, setIsLive] = useState(false);
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-3 sm:p-6">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <div className="p-4 sm:p-6">
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Main Live Stream */}
           <div className="flex-1">

@@ -1,4 +1,4 @@
-import { VideoCard } from "@/components/VideoCard";
+import { PostCard } from "@/components/PostCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Flame, Music, Gamepad2, Trophy } from "lucide-react";
 
@@ -6,33 +6,39 @@ const trendingNow = [
   {
     id: "tr1",
     title: "🔥 BREAKING: Major Tech Announcement - Industry Changed Forever!",
-    channel: "Tech News",
-    views: "8.5M",
+    content: "The tech industry is buzzing with this groundbreaking announcement that will change how we develop applications forever...",
+    author: "Tech News",
+    likes: "8.5K",
+    comments: "1.2K",
     timestamp: "3 hours ago",
-    duration: "12:45",
+    image: "🔥",
   },
   {
     id: "tr2",
-    title: "This Video Broke The Internet - 10M Views in 24 Hours",
-    channel: "Viral Central",
-    views: "10.2M",
+    title: "This Post Broke The Internet - Viral Sensation",
+    content: "Everyone is talking about this! The most shared post of the week with incredible insights...",
+    author: "Viral Central",
+    likes: "10.2K",
+    comments: "2.3K",
     timestamp: "1 day ago",
-    duration: "8:30",
+    image: "⚡",
   },
   {
     id: "tr3",
     title: "Epic Gaming Tournament Finals - Most Watched Event Ever",
-    channel: "Esports Pro",
-    views: "5.8M",
+    content: "The gaming community came together for the most exciting tournament finals in esports history...",
+    author: "Esports Pro",
+    likes: "5.8K",
+    comments: "890",
     timestamp: "6 hours ago",
-    duration: "2:15:30",
+    image: "🎮",
   },
 ];
 
 export default function Trending() {
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center">
             <Flame className="text-white" size={24} />
@@ -64,33 +70,33 @@ export default function Trending() {
           </TabsList>
 
           <TabsContent value="now" className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {trendingNow.map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {trendingNow.map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="music">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {trendingNow.slice(0, 2).map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {trendingNow.slice(0, 2).map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="gaming">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {trendingNow.map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {trendingNow.map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>
 
           <TabsContent value="sports">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {trendingNow.slice(1).map((video) => (
-                <VideoCard key={video.id} {...video} />
+            <div className="max-w-3xl mx-auto space-y-1">
+              {trendingNow.slice(1).map((post) => (
+                <PostCard key={post.id} {...post} />
               ))}
             </div>
           </TabsContent>

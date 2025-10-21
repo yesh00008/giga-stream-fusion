@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VideoCard } from "@/components/VideoCard";
+import { PostCard } from "@/components/PostCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,59 +28,71 @@ const trendingHashtags = [
 ];
 
 const trendingCreators = [
-  { name: "Tech Master", subscribers: "2.1M", avatar: "TM" },
-  { name: "Code Wizard", subscribers: "1.5M", avatar: "CW" },
-  { name: "Design Pro", subscribers: "980K", avatar: "DP" },
+  { name: "Tech Master", followers: "2.1M", avatar: "TM" },
+  { name: "Code Wizard", followers: "1.5M", avatar: "CW" },
+  { name: "Design Pro", followers: "980K", avatar: "DP" },
 ];
 
-const trendingVideos = [
+const trendingPosts = [
   {
     id: "t1",
-    title: "Most Viral Video of the Week - You Won't Believe This!",
-    channel: "Viral Videos",
-    views: "5.2M",
+    title: "Most Viral Post of the Week - You Won't Believe This!",
+    content: "This post has taken the internet by storm! Discover why everyone is talking about this incredible story...",
+    author: "Viral Posts",
+    likes: "5.2K",
+    comments: "890",
     timestamp: "1 day ago",
-    duration: "10:45",
+    image: "🔥",
   },
   {
     id: "t2",
     title: "Breaking: Major Tech Announcement Changed Everything",
-    channel: "Tech News Daily",
-    views: "3.8M",
+    content: "The tech world is buzzing with this groundbreaking announcement that will shape the future of development...",
+    author: "Tech News Daily",
+    likes: "3.8K",
+    comments: "567",
     timestamp: "6 hours ago",
-    duration: "15:20",
+    image: "📢",
   },
   {
     id: "t3",
     title: "Epic Gaming Moments Compilation 2024",
-    channel: "Gaming Legends",
-    views: "4.1M",
+    content: "The most incredible gaming moments captured this year. From clutch plays to hilarious fails...",
+    author: "Gaming Legends",
+    likes: "4.1K",
+    comments: "678",
     timestamp: "12 hours ago",
-    duration: "22:30",
+    image: "🎮",
   },
   {
     id: "t4",
     title: "Mind-Blowing Science Experiment Goes Viral",
-    channel: "Science Hub",
-    views: "2.9M",
+    content: "This amazing science experiment has captured everyone's attention with its surprising results...",
+    author: "Science Hub",
+    likes: "2.9K",
+    comments: "345",
     timestamp: "2 days ago",
-    duration: "8:15",
+    image: "🔬",
   },
   {
     id: "t5",
     title: "Ultimate Productivity Hacks for Developers",
-    channel: "Developer Tips",
-    views: "1.8M",
+    content: "Transform your workflow with these essential productivity tips that every developer should know...",
+    author: "Developer Tips",
+    likes: "1.8K",
+    comments: "234",
     timestamp: "3 days ago",
-    duration: "18:45",
+    image: "⚡",
   },
   {
     id: "t6",
     title: "AI Revolution: What's Coming in 2025",
-    channel: "Future Tech",
-    views: "6.2M",
+    content: "Explore the future of AI and how it will transform the way we work, create, and innovate...",
+    author: "Future Tech",
+    likes: "6.2K",
+    comments: "1.1K",
     timestamp: "5 hours ago",
-    duration: "25:10",
+    image: "🤖",
   },
 ];
 
@@ -89,8 +101,8 @@ export default function Explore() {
   const [filterType, setFilterType] = useState("all");
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 p-6">
+    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 p-4 sm:p-6">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
           <div>
@@ -145,41 +157,41 @@ export default function Explore() {
             </TabsList>
 
             <TabsContent value="foryou" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trendingVideos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {trendingPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="trending" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trendingVideos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {trendingPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="music">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trendingVideos.slice(0, 3).map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {trendingPosts.slice(0, 3).map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="gaming">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trendingVideos.slice(1, 4).map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {trendingPosts.slice(1, 4).map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </TabsContent>
 
             <TabsContent value="tech">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {trendingVideos.map((video) => (
-                  <VideoCard key={video.id} {...video} />
+              <div className="max-w-3xl mx-auto space-y-1">
+                {trendingPosts.map((post) => (
+                  <PostCard key={post.id} {...post} />
                 ))}
               </div>
             </TabsContent>
@@ -231,7 +243,7 @@ export default function Explore() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{creator.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {creator.subscribers} subscribers
+                      {creator.followers} followers
                     </p>
                   </div>
                   <Button variant="outline" size="sm">
