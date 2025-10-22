@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck } from "lucide-react";
+import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ export default function Profile() {
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     username: "",
@@ -67,6 +69,8 @@ export default function Profile() {
       fetchUserPosts();
       if (isOwnProfile) {
         fetchUserBadges();
+      } else {
+        checkFollowStatus();
       }
     }
   }, [user, urlUsername]);
@@ -231,6 +235,94 @@ export default function Profile() {
       fetchUserBadges()
     ]);
     toast.success('Profile refreshed!');
+  };
+
+  const checkFollowStatus = async () => {
+    if (!user?.id || !profile.username) return;
+
+    try {
+      // Get the profile ID of the user being viewed
+      const { data: targetProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', urlUsername)
+        .single();
+
+      if (!targetProfile) return;
+
+      const { data } = await supabase
+        .from('followers')
+        .select('id')
+        .eq('follower_id', user.id)
+        .eq('following_id', targetProfile.id)
+        .maybeSingle();
+
+      setIsFollowing(!!data);
+    } catch (error) {
+      console.error('Error checking follow status:', error);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user?.id) {
+      toast.error('Please sign in to follow users');
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      // Get the profile ID of the user being viewed
+      const { data: targetProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', urlUsername)
+        .single();
+
+      if (!targetProfile) {
+        toast.error('User not found');
+        return;
+      }
+
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', targetProfile.id);
+
+        if (error) throw error;
+
+        setIsFollowing(false);
+        setProfile(prev => ({
+          ...prev,
+          followers_count: Math.max(0, prev.followers_count - 1)
+        }));
+        toast.success('Unfollowed');
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from('followers')
+          .insert([{
+            follower_id: user.id,
+            following_id: targetProfile.id
+          }]);
+
+        if (error) throw error;
+
+        setIsFollowing(true);
+        setProfile(prev => ({
+          ...prev,
+          followers_count: prev.followers_count + 1
+        }));
+        toast.success('Following');
+      }
+    } catch (error: any) {
+      console.error('Error following/unfollowing:', error);
+      toast.error(error.message || 'Action failed. Please try again.');
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const fetchUserBadges = async () => {
@@ -578,7 +670,7 @@ export default function Profile() {
                 {/* Stats - Instagram Style */}
                 <div className="flex-1 flex justify-around text-center">
                   <div className="flex flex-col">
-                    <span className="font-semibold text-sm">{stats[0]?.value || '0'}</span>
+                    <span className="font-semibold text-sm">{profile.posts_count || userPosts.length || 0}</span>
                     <span className="text-xs text-muted-foreground">Posts</span>
                   </div>
                   <button 
@@ -588,7 +680,7 @@ export default function Profile() {
                       fetchFollowers();
                     }}
                   >
-                    <span className="font-semibold text-sm">{stats[1]?.value || '0'}</span>
+                    <span className="font-semibold text-sm">{profile.followers_count || 0}</span>
                     <span className="text-xs text-muted-foreground">Followers</span>
                   </button>
                   <button 
@@ -598,7 +690,7 @@ export default function Profile() {
                       fetchFollowing();
                     }}
                   >
-                    <span className="font-semibold text-sm">{stats[2]?.value || '0'}</span>
+                    <span className="font-semibold text-sm">{profile.following_count || 0}</span>
                     <span className="text-xs text-muted-foreground">Following</span>
                   </button>
                 </div>
@@ -773,9 +865,21 @@ export default function Profile() {
                   </DialogContent>
                 </Dialog>
                 ) : (
-                  <Button variant="default" size="sm" className="flex-1 h-8 text-sm font-semibold">
-                    <UserPlus className="w-4 h-4 mr-1" />
-                    Follow
+                  <Button 
+                    variant={isFollowing ? "outline" : "default"} 
+                    size="sm" 
+                    className="flex-1 h-8 text-sm font-semibold"
+                    onClick={handleFollow}
+                    disabled={followLoading}
+                  >
+                    {followLoading ? (
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    ) : isFollowing ? (
+                      <UserCheck className="w-4 h-4 mr-1" />
+                    ) : (
+                      <UserPlus className="w-4 h-4 mr-1" />
+                    )}
+                    {isFollowing ? 'Following' : 'Follow'}
                   </Button>
                 )}
                 <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold" onClick={copyProfileLink}>
@@ -912,9 +1016,20 @@ export default function Profile() {
                     </DialogContent>
                   </Dialog>
                   ) : (
-                    <Button variant="default" size="sm">
-                      <UserPlus size={16} className="mr-2" />
-                      Follow
+                    <Button 
+                      variant={isFollowing ? "outline" : "default"} 
+                      size="sm"
+                      onClick={handleFollow}
+                      disabled={followLoading}
+                    >
+                      {followLoading ? (
+                        <Loader2 size={16} className="mr-2 animate-spin" />
+                      ) : isFollowing ? (
+                        <UserCheck size={16} className="mr-2" />
+                      ) : (
+                        <UserPlus size={16} className="mr-2" />
+                      )}
+                      {isFollowing ? 'Following' : 'Follow'}
                     </Button>
                   )}
                   <DropdownMenu>
@@ -1028,7 +1143,11 @@ export default function Profile() {
             <div className="grid grid-cols-3 gap-1">
               {userPosts.length > 0 ? (
                 userPosts.map((post) => (
-                  <div key={post.id} className="aspect-square bg-muted relative group cursor-pointer overflow-hidden">
+                  <div 
+                    key={post.id} 
+                    className="aspect-square bg-muted relative group cursor-pointer overflow-hidden"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  >
                     {post.image_url ? (
                       <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
                     ) : (
@@ -1039,7 +1158,11 @@ export default function Profile() {
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
                       <div className="flex items-center gap-1">
                         <MessageSquare size={20} />
-                        <span className="font-semibold">{post.comments || 0}</span>
+                        <span className="font-semibold">{post.comments_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart size={20} />
+                        <span className="font-semibold">{post.likes_count || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -1056,12 +1179,20 @@ export default function Profile() {
             <div className="grid grid-cols-3 gap-1">
               {userPosts.filter(post => post.image_url).length > 0 ? (
                 userPosts.filter(post => post.image_url).map((post) => (
-                  <div key={post.id} className="aspect-square bg-muted relative group cursor-pointer overflow-hidden">
+                  <div 
+                    key={post.id} 
+                    className="aspect-square bg-muted relative group cursor-pointer overflow-hidden"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  >
                     <img src={post.image_url} alt={post.title} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 text-white">
                       <div className="flex items-center gap-1">
                         <MessageSquare size={20} />
-                        <span className="font-semibold">{post.comments || 0}</span>
+                        <span className="font-semibold">{post.comments_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart size={20} />
+                        <span className="font-semibold">{post.likes_count || 0}</span>
                       </div>
                     </div>
                   </div>
