@@ -2,14 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* YouTube Glassmorphism Theme - Modern glass effects */
 
 @layer base {
   :root {
-    /* Claude.ai inspired theme - Warm neutrals with coral accents */
-    --background: 30 15% 97%;
+    /* Claude-inspired warm coral theme with clean white backgrounds */
+    --background: 0 0% 100%;
     --foreground: 24 10% 10%;
 
     --card: 0 0% 100%;
@@ -21,10 +19,10 @@ All colors MUST be HSL.
     --primary: 16 85% 58%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 30 10% 93%;
+    --secondary: 30 10% 96%;
     --secondary-foreground: 24 10% 10%;
 
-    --muted: 30 10% 95%;
+    --muted: 30 5% 97%;
     --muted-foreground: 24 6% 46%;
 
     --accent: 16 82% 62%;
@@ -33,8 +31,8 @@ All colors MUST be HSL.
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 30 8% 88%;
-    --input: 30 8% 90%;
+    --border: 30 8% 90%;
+    --input: 30 8% 95%;
     --ring: 16 85% 58%;
 
     --radius: 0.75rem;
@@ -43,182 +41,142 @@ All colors MUST be HSL.
     --sidebar-foreground: 24 10% 10%;
     --sidebar-primary: 16 85% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 30 10% 96%;
+    --sidebar-accent: 30 10% 97%;
     --sidebar-accent-foreground: 24 10% 10%;
-    --sidebar-border: 30 8% 92%;
+    --sidebar-border: 30 8% 93%;
     --sidebar-ring: 16 85% 58%;
     
+    /* Glassmorphism variables */
+    --glass-bg: rgba(255, 255, 255, 0.8);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px 0 rgba(235, 119, 90, 0.1);
+    --glass-blur: 12px;
+    
     --gradient-primary: linear-gradient(135deg, hsl(16 85% 58%), hsl(20 82% 62%));
-    --gradient-secondary: linear-gradient(145deg, hsl(30 15% 98%), hsl(30 10% 95%));
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(30 15% 98%));
-    --glow-primary: 0 8px 32px hsl(16 85% 58% / 0.15);
-    --glow-secondary: 0 4px 16px hsl(16 60% 70% / 0.08);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .dark {
-    --background: 24 10% 10%;
-    --foreground: 30 10% 95%;
+    --background: 24 10% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 24 8% 12%;
-    --card-foreground: 30 10% 95%;
+    --card: 24 8% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 24 8% 12%;
-    --popover-foreground: 30 10% 95%;
+    --popover: 24 8% 10%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 16 85% 58%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 24 6% 18%;
-    --secondary-foreground: 30 10% 95%;
+    --secondary: 24 10% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 24 6% 16%;
-    --muted-foreground: 30 6% 64%;
+    --muted: 24 8% 12%;
+    --muted-foreground: 24 6% 60%;
 
     --accent: 16 82% 62%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 50%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 24 6% 20%;
-    --input: 24 6% 18%;
-    --ring: 16 85% 58%;
+    --border: 24 8% 20%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 98%;
 
-    --sidebar-background: 24 8% 12%;
-    --sidebar-foreground: 30 10% 95%;
-    --sidebar-primary: 16 85% 58%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 24 6% 16%;
-    --sidebar-accent-foreground: 30 10% 95%;
-    --sidebar-border: 24 6% 20%;
-    --sidebar-ring: 16 85% 58%;
+    --sidebar-background: 0 0% 12%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 0 0% 98%;
     
-    --gradient-primary: linear-gradient(135deg, hsl(16 85% 58%), hsl(20 82% 62%));
-    --gradient-secondary: linear-gradient(145deg, hsl(24 8% 12%), hsl(24 6% 16%));
-    --gradient-card: linear-gradient(145deg, hsl(24 8% 12%), hsl(24 6% 14%));
-    --glow-primary: 0 8px 32px hsl(16 85% 58% / 0.2);
-    --glow-secondary: 0 4px 16px hsl(16 60% 50% / 0.1);
+    /* Glassmorphism for dark mode */
+    --glass-bg: rgba(20, 20, 20, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+    --glass-blur: 10px;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
-
+  
   body {
-    @apply bg-background text-foreground antialiased;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    letter-spacing: -0.01em;
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* YouTube-style glassmorphism */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
   }
   
-  .gradient-primary {
-    background: var(--gradient-primary);
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  .gradient-card {
-    background: var(--gradient-card);
+  .glass-card:hover {
+    box-shadow: var(--glass-shadow);
+    transform: translateY(-2px);
   }
   
-  .glow-primary {
-    box-shadow: var(--glow-primary);
+  .glass-button {
+    background: var(--glass-bg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    transition: all 0.15s ease;
   }
   
-  .glow-secondary {
-    box-shadow: var(--glow-secondary);
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: scale(1.02);
   }
   
-  .transition-smooth {
-    transition: var(--transition-smooth);
+  .dark .glass-button:hover {
+    background: rgba(30, 30, 30, 0.9);
+  }
+
+  /* YouTube rounded corners */
+  .youtube-rounded {
+    border-radius: 12px;
   }
   
-  /* Claude.ai inspired button styles */
-  .btn-claude {
-    @apply bg-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg font-medium shadow-sm;
+  .youtube-rounded-lg {
+    border-radius: 16px;
+  }
+
+  /* Floating effects */
+  .floating {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
   }
   
-  .btn-claude-outline {
-    @apply border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-200 rounded-lg font-medium;
+  .floating:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
   }
+
+  /* Instagram logo font */
+  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
   
-  /* Soft shadows like Claude */
-  .shadow-claude {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  }
-  
-  .shadow-claude-lg {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
-  }
-  
-  /* Hide scrollbar but allow scrolling */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  /* Touch-friendly tap targets */
-  @media (max-width: 768px) {
-    button, a, [role="button"] {
-      min-height: 44px;
-      min-width: 44px;
-    }
-  }
-  
-  /* Prevent text selection on touch */
-  .select-none {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 5px;
-    border: 2px solid hsl(var(--background));
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
-  }
-  
-  /* Mobile optimizations */
-  @media (max-width: 640px) {
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-  }
-  
-  /* Character animation */
-  @keyframes bounce-subtle {
-    0%, 100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-5px);
-    }
-  }
-  
-  .animate-bounce-subtle {
-    animation: bounce-subtle 2s ease-in-out infinite;
-  }
-  
-  .animate-bounce-subtle:hover {
-    animation: bounce-subtle 0.6s ease-in-out infinite;
+  .logo-instagram-style {
+    font-family: 'Pacifico', cursive;
+    font-weight: 400;
+    letter-spacing: 1px;
   }
 }

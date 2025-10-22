@@ -4,8 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth-context";
-import { signOut } from "@/lib/supabase";
+import { signOut, supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,145 @@ export function Header() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [notificationCount, setNotificationCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchNotificationCount();
+      
+      // Set up real-time subscription for follow requests
+      const subscription = supabase
+        .channel('follow_requests_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'follow_requests',
+            filter: `target_id=eq.${user.id}`
+          },
+          () => {
+            fetchNotificationCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [user?.id]);
+
+  const fetchNotificationCount = async () => {
+    if (!user?.id) return;
+
+    try {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      // Fetch all notification counts in parallel for speed
+      const [
+        followRequestsCount,
+        likesCount,
+        commentsCount,
+        retweetsCount
+      ] = await Promise.all([
+        // Follow requests count
+        supabase
+          .from('follow_requests')
+          .select('*', { count: 'exact', head: true })
+          .eq('target_id', user.id)
+          .eq('status', 'pending'),
+
+        // Likes count (on user's posts)
+        supabase
+          .from('post_likes')
+          .select('post_id', { count: 'exact', head: true })
+          .neq('user_id', user.id)
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .then(async (result) => {
+            // Get user's post IDs to filter
+            const userPosts = await supabase
+              .from('posts')
+              .select('id')
+              .eq('user_id', user.id);
+            
+            if (!userPosts.data) return { count: 0 };
+            
+            const postIds = userPosts.data.map(p => p.id);
+            if (postIds.length === 0) return { count: 0 };
+            
+            // Count likes on user's posts
+            return supabase
+              .from('post_likes')
+              .select('*', { count: 'exact', head: true })
+              .in('post_id', postIds)
+              .neq('user_id', user.id)
+              .gte('created_at', thirtyDaysAgo.toISOString());
+          }),
+
+        // Comments count (on user's posts)
+        supabase
+          .from('comments')
+          .select('post_id', { count: 'exact', head: true })
+          .neq('user_id', user.id)
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .then(async (result) => {
+            const userPosts = await supabase
+              .from('posts')
+              .select('id')
+              .eq('user_id', user.id);
+            
+            if (!userPosts.data) return { count: 0 };
+            
+            const postIds = userPosts.data.map(p => p.id);
+            if (postIds.length === 0) return { count: 0 };
+            
+            return supabase
+              .from('comments')
+              .select('*', { count: 'exact', head: true })
+              .in('post_id', postIds)
+              .neq('user_id', user.id)
+              .gte('created_at', thirtyDaysAgo.toISOString());
+          }),
+
+        // Retweets count (of user's posts)
+        supabase
+          .from('retweets')
+          .select('post_id', { count: 'exact', head: true })
+          .neq('user_id', user.id)
+          .gte('created_at', thirtyDaysAgo.toISOString())
+          .then(async (result) => {
+            const userPosts = await supabase
+              .from('posts')
+              .select('id')
+              .eq('user_id', user.id);
+            
+            if (!userPosts.data) return { count: 0 };
+            
+            const postIds = userPosts.data.map(p => p.id);
+            if (postIds.length === 0) return { count: 0 };
+            
+            return supabase
+              .from('retweets')
+              .select('*', { count: 'exact', head: true })
+              .in('post_id', postIds)
+              .neq('user_id', user.id)
+              .gte('created_at', thirtyDaysAgo.toISOString());
+          })
+      ]);
+
+      const totalCount = 
+        (followRequestsCount.count || 0) +
+        (likesCount.count || 0) +
+        (commentsCount.count || 0) +
+        (retweetsCount.count || 0);
+
+      setNotificationCount(totalCount);
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -37,25 +177,27 @@ export function Header() {
   };
 
   return (
-    <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur-sm flex items-center px-4 gap-4 sticky top-0 z-50">
+    <header className="glass h-14 flex items-center px-4 gap-4 sticky top-0 z-50">
       <div className="flex items-center gap-3 flex-1">
-        <div className="lg:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <span className="text-white font-bold text-sm">G</span>
-          </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent tracking-tight">Giga</span>
+        <div 
+          className="lg:hidden flex items-center cursor-pointer transition-transform hover:scale-105" 
+          onClick={() => navigate("/")}
+        >
+          <span className="logo-instagram-style text-3xl text-foreground">
+            Giga
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               size="icon"
               variant="ghost"
-              className="h-10 w-10 rounded-full hover:bg-secondary"
+              className="h-10 w-10 rounded-full hover:bg-accent/50 transition-all"
             >
-              <Plus size={22} strokeWidth={2.5} />
+              <Plus size={24} strokeWidth={2} />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
@@ -88,7 +230,11 @@ export function Header() {
           className="relative h-10 w-10 rounded-full hover:bg-secondary"
         >
           <BellDot size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-background"></span>
+          {notificationCount > 0 && (
+            <Badge className="absolute -top-0.5 -right-0.5 h-5 w-5 p-0 flex items-center justify-center bg-primary text-[10px] rounded-full border-2 border-background">
+              {notificationCount > 9 ? '9+' : notificationCount}
+            </Badge>
+          )}
         </Button>
 
         <Button

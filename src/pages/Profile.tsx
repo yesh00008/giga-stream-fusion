@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck, Heart } from "lucide-react";
+import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, X, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { MobileProfileHeader } from "@/components/MobileProfileHeader";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -639,6 +640,36 @@ export default function Profile() {
     }
   };
 
+  const handleRemoveFollower = async (followerId: string) => {
+    if (!user?.id || !isOwnProfile) {
+      toast.error('You can only remove your own followers');
+      return;
+    }
+
+    try {
+      // Delete the follower relationship
+      const { error } = await supabase
+        .from('followers')
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setFollowers(prev => prev.filter(f => f.follower_id !== followerId));
+      setProfile(prev => ({
+        ...prev,
+        followers_count: Math.max(0, prev.followers_count - 1)
+      }));
+
+      toast.success('Follower removed');
+    } catch (error: any) {
+      console.error('Error removing follower:', error);
+      toast.error('Failed to remove follower');
+    }
+  };
+
   const fetchUserBadges = async () => {
     try {
       if (!user?.id) {
@@ -895,7 +926,13 @@ export default function Profile() {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+    <motion.div 
+      className="flex-1 overflow-y-auto pb-20 lg:pb-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       {/* Mobile Profile Header - Replaces top nav on profile page */}
       <MobileProfileHeader username={profile.username || 'user'} />
       
@@ -942,7 +979,7 @@ export default function Profile() {
                     <span className="text-xs text-muted-foreground">Posts</span>
                   </div>
                   <button 
-                    className="flex flex-col"
+                    className="flex flex-col relative"
                     onClick={() => {
                       setShowFollowersDialog(true);
                       fetchFollowers();
@@ -950,6 +987,11 @@ export default function Profile() {
                   >
                     <span className="font-semibold text-sm">{profile.followers_count || 0}</span>
                     <span className="text-xs text-muted-foreground">Followers</span>
+                    {isOwnProfile && followRequestsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                        {followRequestsCount}
+                      </span>
+                    )}
                   </button>
                   <button 
                     className="flex flex-col"
@@ -1019,6 +1061,7 @@ export default function Profile() {
                   <Dialog open={isEditing} onOpenChange={setIsEditing}>
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold">
+                        <Edit2 size={14} className="mr-1" />
                         Edit Profile
                       </Button>
                     </DialogTrigger>
@@ -1545,17 +1588,33 @@ export default function Profile() {
                           </div>
                         </div>
                         {!isOwnUser && (
-                          <Button
-                            size="sm"
-                            variant={isFollowingThisUser ? "outline" : "default"}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleFollowFromList(followerProfile.id, isFollowingThisUser);
-                            }}
-                            className="ml-2"
-                          >
-                            {isFollowingThisUser ? 'Following' : 'Follow'}
-                          </Button>
+                          isOwnProfile ? (
+                            // Show "Remove" button if this is your own profile
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveFollower(followerProfile.id);
+                              }}
+                              className="ml-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              Remove
+                            </Button>
+                          ) : (
+                            // Show "Follow/Following" button if viewing someone else's profile
+                            <Button
+                              size="sm"
+                              variant={isFollowingThisUser ? "outline" : "default"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleFollowFromList(followerProfile.id, isFollowingThisUser);
+                              }}
+                              className="ml-2"
+                            >
+                              {isFollowingThisUser ? 'Following' : 'Follow'}
+                            </Button>
+                          )
                         )}
                       </div>
                     );
@@ -1630,7 +1689,12 @@ export default function Profile() {
                             }}
                             className="ml-2"
                           >
-                            {isFollowingThisUser ? 'Following' : 'Follow'}
+                            {isFollowingThisUser ? (
+                              <span className="flex items-center gap-1">
+                                <UserCheck size={14} />
+                                Following
+                              </span>
+                            ) : 'Follow'}
                           </Button>
                         )}
                       </div>
@@ -1682,6 +1746,6 @@ export default function Profile() {
           badgeType={profile.badge_type} 
         />
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -225,27 +225,33 @@ export async function getComments(postId: string, userId?: string): Promise<Comm
  */
 export async function createComment(postId: string, userId: string, content: string): Promise<Comment | null> {
   try {
-    const { data, error } = await supabase
+    // Insert the comment
+    const { data: comment, error: insertError } = await supabase
       .from('comments')
       .insert([{
         post_id: postId,
         user_id: userId,
         content: content.trim()
       }])
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          username,
-          full_name,
-          avatar_url,
-          badge_type
-        )
-      `)
+      .select()
       .single();
 
-    if (error) throw error;
-    return data;
+    if (insertError) throw insertError;
+    
+    // Fetch the user profile separately
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, username, full_name, avatar_url, badge_type')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Combine comment with profile
+    return {
+      ...comment,
+      profiles: profile
+    };
   } catch (error) {
     console.error('Error creating comment:', error);
     throw error;

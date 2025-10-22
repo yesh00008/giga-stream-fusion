@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { VerificationBadge } from "@/components/VerificationBadge";
+import { motion } from "framer-motion";
+import { RetweetMenu } from "@/components/RetweetMenu";
+import { QuoteDialog } from "@/components/QuoteDialog";
+import { useAuth } from "@/lib/auth-context";
+import { createPost, uploadImage } from "@/lib/feed-service";
+import { toast } from "sonner";
 
 interface PostCardProps {
   id: string;
@@ -51,11 +57,13 @@ export function PostCard({
   onShare,
 }: PostCardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [localLiked, setLocalLiked] = useState(isLiked);
   const [localRetweeted, setLocalRetweeted] = useState(isRetweeted);
   const [localBookmarked, setLocalBookmarked] = useState(isBookmarked);
   const [localLikes, setLocalLikes] = useState(parseInt(likes));
   const [localRetweets, setLocalRetweets] = useState(parseInt(retweets));
+  const [showQuoteDialog, setShowQuoteDialog] = useState(false);
 
   const handleMoreClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -69,12 +77,56 @@ export function PostCard({
     onLike?.(id);
   };
 
-  const handleRetweetClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleRetweetClick = () => {
     const newRetweeted = !localRetweeted;
     setLocalRetweeted(newRetweeted);
     setLocalRetweets(prev => newRetweeted ? prev + 1 : Math.max(0, prev - 1));
     onRetweet?.(id);
+  };
+
+  const handleQuoteClick = () => {
+    setShowQuoteDialog(true);
+  };
+
+  const handleQuotePosted = async (content: string, imageFile?: File) => {
+    if (!user) {
+      toast.error('Please sign in to quote this post');
+      return;
+    }
+
+    try {
+      let imageUrl: string | undefined;
+
+      // Upload image if provided
+      if (imageFile) {
+        const { url, error: uploadError } = await uploadImage(imageFile, user.id);
+        if (uploadError) {
+          throw new Error('Failed to upload image');
+        }
+        imageUrl = url || undefined;
+      }
+
+      // Create the quote post
+      const { data, error } = await createPost({
+        user_id: user.id,
+        content,
+        image_urls: imageUrl ? [imageUrl] : [],
+        quoted_post_id: id, // Reference to the original post
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success('Quote posted successfully!');
+      
+      // Optionally refresh or update the feed
+      // You can call a callback here if you need to refresh the parent component
+    } catch (error) {
+      console.error('Error posting quote:', error);
+      toast.error('Failed to post quote');
+      throw error; // Re-throw to let QuoteDialog handle it
+    }
   };
 
   const handleBookmarkClick = (e: React.MouseEvent) => {
@@ -176,13 +228,14 @@ export function PostCard({
           {parseInt(comments) > 0 && <span className="text-xs font-medium">{comments}</span>}
         </button>
 
-        <button 
-          className={`flex items-center gap-1.5 p-2 rounded-lg transition-colors ${localRetweeted ? 'text-green-500' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'}`}
-          onClick={handleRetweetClick}
-        >
-          <Repeat2 size={19} strokeWidth={2} />
-          {localRetweets > 0 && <span className="text-xs font-medium">{localRetweets}</span>}
-        </button>
+        <div onClick={(e) => e.stopPropagation()}>
+          <RetweetMenu
+            isRetweeted={localRetweeted}
+            retweetCount={localRetweets}
+            onRepost={handleRetweetClick}
+            onQuote={handleQuoteClick}
+          />
+        </div>
 
         <button 
           className="flex items-center gap-1.5 p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -199,6 +252,23 @@ export function PostCard({
           <Bookmark size={19} className={localBookmarked ? 'fill-current' : ''} strokeWidth={2} />
         </button>
       </div>
+
+      {/* Quote Dialog */}
+      <QuoteDialog
+        open={showQuoteDialog}
+        onOpenChange={setShowQuoteDialog}
+        originalPost={{
+          id,
+          author,
+          authorUsername: authorUsername || '',
+          authorAvatar,
+          authorBadge,
+          content,
+          image,
+          timestamp
+        }}
+        onQuote={handleQuotePosted}
+      />
     </div>
   );
 }

@@ -403,29 +403,103 @@ export const toggleRetweet = async (postId: string, userId: string) => {
 // Get posts with user interactions and accurate counts
 export const getPosts = async (userId?: string, limit = 50) => {
   try {
-    // First, get all posts with accurate counts from database
+    // First, get all posts
     const { data: postsData, error: postsError } = await supabase
       .from('posts')
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          username,
-          full_name,
-          avatar_url,
-          badge_type
-        )
-      `)
+      .select('*')
       .eq('content_type', 'post')
       .or('is_draft.eq.false,is_draft.is.null')
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit * 2); // Fetch more to account for filtering
 
-    if (postsError) throw postsError;
+    if (postsError) {
+      console.error('Error fetching posts:', postsError);
+      throw postsError;
+    }
+
+    if (!postsData || postsData.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Get unique user IDs from posts
+    const userIds = [...new Set(postsData.map(post => post.user_id).filter(Boolean))];
+    console.log('📊 User IDs from posts:', userIds);
+    
+    // Fetch all profiles at once
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, username, full_name, avatar_url, badge_type, is_private')
+      .in('id', userIds);
+    
+    console.log('👥 Fetched profiles:', profilesData?.length || 0, 'profiles');
+    if (profilesError) console.error('❌ Profile fetch error:', profilesError);
+    
+    // Create a map for quick profile lookup
+    const profilesMap = new Map(
+      (profilesData || []).map(profile => [profile.id, profile])
+    );
+    console.log('🗺️  ProfilesMap size:', profilesMap.size);
+    
+    // Attach profiles to posts
+    const postsWithProfiles = postsData.map(post => ({
+      ...post,
+      profiles: profilesMap.get(post.user_id) || null
+    }));
+    
+    console.log('📝 Posts with profiles:', postsWithProfiles.filter(p => p.profiles).length, '/', postsWithProfiles.length);
+    console.log('❌ Posts missing profiles:', postsWithProfiles.filter(p => !p.profiles).map(p => ({
+      id: p.id,
+      user_id: p.user_id,
+      content_preview: p.content?.substring(0, 50)
+    })));
+    
+    // Filter out posts without valid profiles
+    const validPosts = postsWithProfiles.filter(post => post.profiles !== null);
+    
+    if (validPosts.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Filter out private account posts if user is not following
+    let filteredPosts = validPosts;
+    
+    if (userId) {
+      // Get list of users the current user is following
+      const { data: followingData } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', userId);
+      
+      const followingIds = followingData?.map(f => f.following_id) || [];
+      
+      // Filter posts: show if (1) profile is public OR (2) user is following OR (3) it's user's own post
+      filteredPosts = validPosts.filter(post => {
+        const profile = post.profiles;
+        if (!profile) return false;
+        
+        // Show own posts
+        if (post.user_id === userId) return true;
+        
+        // Show public account posts
+        if (!profile.is_private) return true;
+        
+        // Show private account posts only if following
+        return followingIds.includes(post.user_id);
+      });
+    } else {
+      // Not logged in - only show public account posts
+      filteredPosts = validPosts.filter(post => {
+        const profile = post.profiles;
+        return profile && !profile.is_private;
+      });
+    }
+
+    // Limit after filtering
+    filteredPosts = filteredPosts.slice(0, limit);
 
     // If no user is logged in, return posts without interaction data but with counts
-    if (!userId || !postsData) {
-      const formattedPosts = (postsData || []).map(post => ({
+    if (!userId) {
+      const formattedPosts = filteredPosts.map(post => ({
         ...post,
         likes_count: post.likes_count || 0,
         comments_count: post.comments_count || 0,
@@ -458,7 +532,7 @@ export const getPosts = async (userId?: string, limit = 50) => {
     }
 
     // Format posts with user interactions and accurate counts
-    const formattedPosts = postsData?.map(post => ({
+    const formattedPosts = filteredPosts?.map(post => ({
       ...post,
       likes_count: post.likes_count || 0,
       comments_count: post.comments_count || 0,

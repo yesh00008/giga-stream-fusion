@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { PostCard } from "@/components/PostCard";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { toggleLike, toggleRetweet, toggleBookmark, incrementShareCount, getPosts } from "@/lib/interaction-service";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const categories = ["All", "Music", "Gaming", "Tech", "Cooking", "Sports", "News", "Education"];
+import { motion } from "framer-motion";
 
 interface Post {
   id: string;
@@ -38,11 +36,10 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState("All");
 
   useEffect(() => {
     loadPosts();
-  }, [user]); // Remove activeCategory dependency for now
+  }, [user]);
 
   const loadPosts = async () => {
     try {
@@ -215,24 +212,14 @@ export default function Home() {
   };
   
   return (
-    <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+    <motion.div 
+      className="flex-1 overflow-y-auto pb-20 lg:pb-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="px-3 sm:px-4 md:px-6 py-4 pb-6">
-        <div className="mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
-          <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
-            <TabsList className="mb-4 sm:mb-6 bg-transparent justify-start w-max gap-1 p-0 h-auto border-b border-border rounded-none">
-              {categories.map((category) => (
-                <TabsTrigger
-                  key={category}
-                  value={category}
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground text-muted-foreground text-sm px-4 py-2 font-medium transition-all rounded-none bg-transparent shadow-none"
-                >
-                  {category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
-
         <div className="max-w-2xl mx-auto border-x border-border/50">
           {error && (
             <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive border-b border-border/50">
@@ -267,34 +254,44 @@ export default function Home() {
               <p className="text-sm mt-2">Be the first to create content!</p>
             </div>
           ) : (
-            posts.map((post) => (
-              <PostCard
+            posts.map((post, index) => (
+              <motion.div
                 key={post.id}
-                id={post.id}
-                title=""
-                content={post.content}
-                author={post.profiles.full_name || 'Anonymous'}
-                authorUsername={post.profiles.username}
-                authorAvatar={post.profiles.avatar_url || undefined}
-                authorBadge={post.profiles.badge_type}
-                likes={(post.likes_count || 0).toString()}
-                comments={(post.comments_count || 0).toString()}
-                retweets={(post.retweets_count || 0).toString()}
-                shares={(post.shares_count || 0).toString()}
-                timestamp={new Date(post.created_at).toLocaleDateString()}
-                image={post.image_url || undefined}
-                isLiked={post.is_liked}
-                isRetweeted={post.is_retweeted}
-                isBookmarked={post.is_bookmarked}
-                onLike={handleLike}
-                onRetweet={handleRetweet}
-                onBookmark={handleBookmark}
-                onShare={handleShare}
-              />
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  ease: 'easeOut'
+                }}
+              >
+                <PostCard
+                  id={post.id}
+                  title=""
+                  content={post.content}
+                  author={post.profiles.full_name || 'Anonymous'}
+                  authorUsername={post.profiles.username}
+                  authorAvatar={post.profiles.avatar_url || undefined}
+                  authorBadge={post.profiles.badge_type}
+                  likes={(post.likes_count || 0).toString()}
+                  comments={(post.comments_count || 0).toString()}
+                  retweets={(post.retweets_count || 0).toString()}
+                  shares={(post.shares_count || 0).toString()}
+                  timestamp={new Date(post.created_at).toLocaleDateString()}
+                  image={post.image_url || undefined}
+                  isLiked={post.is_liked}
+                  isRetweeted={post.is_retweeted}
+                  isBookmarked={post.is_bookmarked}
+                  onLike={handleLike}
+                  onRetweet={handleRetweet}
+                  onBookmark={handleBookmark}
+                  onShare={handleShare}
+                />
+              </motion.div>
             ))
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
