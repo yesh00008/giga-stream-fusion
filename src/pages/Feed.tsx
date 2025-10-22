@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { VerificationBadge, BadgeType } from "@/components/VerificationBadge";
 import { MobileProfileHeader } from "@/components/MobileProfileHeader";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +77,7 @@ const MAX_CHAR_COUNT = 280;
 
 export default function Feed() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
@@ -622,16 +624,20 @@ export default function Feed() {
                 </div>
               ) : (
                 posts.map((post) => (
-                  <Card key={post.id} className="p-3 sm:p-4 border-x-0 border-t-0 rounded-none hover:bg-muted/30 transition-colors cursor-pointer">
+                  <Card 
+                    key={post.id} 
+                    className="p-0 border-x-0 border-t-0 rounded-none hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/post/${post.id}`)}
+                  >
                     {post.reply_to && (
-                      <div className="flex items-center gap-2 mb-2 text-muted-foreground text-sm">
+                      <div className="flex items-center gap-2 px-4 pt-3 text-muted-foreground text-sm">
                         <MessageCircle size={14} />
                         <span>Replying to @{post.reply_to.username}</span>
                       </div>
                     )}
                     
-                    <div className="flex gap-2 sm:gap-3">
-                      <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
+                    <div className="flex gap-3 px-4 pt-4 pb-2">
+                      <Avatar className="w-10 h-10 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                         <AvatarImage src={post.author.avatar_url} />
                         <AvatarFallback>
                           {post.author.name[0]?.toUpperCase()}
@@ -639,45 +645,43 @@ export default function Feed() {
                       </Avatar>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
-                          <span className="font-semibold hover:underline text-sm sm:text-base truncate max-w-[120px] sm:max-w-none">
-                            {post.author.name}
-                          </span>
-                          {post.author.badge_type && (
-                            <VerificationBadge type={post.author.badge_type} size={14} className="sm:w-4 sm:h-4" />
-                          )}
-                          <span className="text-muted-foreground text-xs sm:text-sm truncate max-w-[80px] sm:max-w-none">
-                            @{post.author.username}
-                          </span>
-                          <span className="text-muted-foreground hidden sm:inline">·</span>
-                          <span className="text-muted-foreground text-xs sm:text-sm">
-                            {formatTime(post.created_at)}
-                          </span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="font-semibold text-sm hover:underline truncate" onClick={(e) => e.stopPropagation()}>
+                              {post.author.name}
+                            </span>
+                            {post.author.badge_type && (
+                              <VerificationBadge type={post.author.badge_type} size={14} className="flex-shrink-0" />
+                            )}
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
+                              {formatTime(post.created_at)}
+                            </span>
+                          </div>
                           
                           <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button size="icon" variant="ghost" className="h-8 w-8 ml-auto">
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 -mr-2">
                                 <MoreHorizontal size={16} />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleBookmark(post.id)}>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleBookmark(post.id); }}>
                                 <Bookmark className="mr-2 h-4 w-4" />
                                 {post.is_bookmarked ? 'Remove bookmark' : 'Bookmark'}
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleShare(post)}>
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(post); }}>
                                 <Share className="mr-2 h-4 w-4" />
                                 Share post
                               </DropdownMenuItem>
                               {post.author.id === user?.id && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEdit(post)}>
+                                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(post); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     Edit post
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
-                                    onClick={() => handleDelete(post.id)}
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }}
                                     className="text-red-500 focus:text-red-500"
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" />
@@ -688,7 +692,7 @@ export default function Feed() {
                               {post.author.id !== user?.id && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-red-500 focus:text-red-500">
+                                  <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={(e) => e.stopPropagation()}>
                                     <X className="mr-2 h-4 w-4" />
                                     Report post
                                   </DropdownMenuItem>
@@ -698,7 +702,7 @@ export default function Feed() {
                           </DropdownMenu>
                         </div>
 
-                        <p className="text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap mb-3">
+                        <p className="text-[15px] leading-normal whitespace-pre-wrap mb-3">
                           {post.content}
                         </p>
 
@@ -763,81 +767,73 @@ export default function Feed() {
                             <p className="text-sm">{post.quoted_post.content}</p>
                           </div>
                         )}
-
-                        <div className="flex items-center justify-between max-w-md pt-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="hover:text-blue-500 hover:bg-blue-500/10 gap-1 sm:gap-2 -ml-2 h-8 sm:h-9 px-2 sm:px-3"
-                          >
-                            <MessageCircle className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                            {post.comments_count > 0 && (
-                              <span className="text-xs sm:text-sm">{post.comments_count}</span>
-                            )}
-                          </Button>
-
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => handleRetweet(post.id)}
-                            className={`hover:text-green-500 hover:bg-green-500/10 gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 ${
-                              post.is_retweeted ? 'text-green-500' : ''
-                            }`}
-                          >
-                            <Repeat2 className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                            {post.retweets_count > 0 && (
-                              <span className="text-xs sm:text-sm">{post.retweets_count}</span>
-                            )}
-                          </Button>
-
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            onClick={() => handleLike(post.id)}
-                            className={`hover:text-red-500 hover:bg-red-500/10 gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 ${
-                              post.is_liked ? 'text-red-500' : ''
-                            }`}
-                          >
-                            <Heart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill={post.is_liked ? 'currentColor' : 'none'} />
-                            {post.likes_count > 0 && (
-                              <span className="text-xs sm:text-sm">{post.likes_count}</span>
-                            )}
-                          </Button>
-
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="hover:text-blue-500 hover:bg-blue-500/10 gap-1 sm:gap-2 h-8 sm:h-9 px-2 sm:px-3 hidden sm:flex"
-                          >
-                            <BarChart className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                            {post.views_count && (
-                              <span className="text-xs sm:text-sm">{post.views_count > 1000 ? `${(post.views_count / 1000).toFixed(1)}K` : post.views_count}</span>
-                            )}
-                          </Button>
-
-                          <div className="flex gap-0.5 sm:gap-1">
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              onClick={() => handleBookmark(post.id)}
-                              className={`hover:text-primary hover:bg-primary/10 h-8 sm:h-9 w-8 sm:w-9 p-0 ${
-                                post.is_bookmarked ? 'text-primary' : ''
-                              }`}
-                            >
-                              <Bookmark className="w-4 h-4 sm:w-[18px] sm:h-[18px]" fill={post.is_bookmarked ? 'currentColor' : 'none'} />
-                            </Button>
-
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
-                              className="hover:text-primary hover:bg-primary/10 h-8 sm:h-9 w-8 sm:w-9 p-0"
-                              onClick={() => handleShare(post)}
-                            >
-                              <Share className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                            </Button>
-                          </div>
-                        </div>
                       </div>
+                    </div>
+
+                    {/* Interaction buttons row */}
+                    <div className="flex items-center px-4 pb-3 gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="hover:text-blue-500 hover:bg-blue-500/10 gap-1.5 h-9 px-2 rounded-lg"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/post/${post.id}`); }}
+                      >
+                        <MessageCircle size={19} strokeWidth={2} />
+                        {post.comments_count > 0 && (
+                          <span className="text-xs font-medium">{post.comments_count}</span>
+                        )}
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={(e) => { e.stopPropagation(); handleRetweet(post.id); }}
+                        className={`hover:text-green-500 hover:bg-green-500/10 gap-1.5 h-9 px-2 rounded-lg ${
+                          post.is_retweeted ? 'text-green-500' : ''
+                        }`}
+                      >
+                        <Repeat2 size={19} strokeWidth={2} />
+                        {post.retweets_count > 0 && (
+                          <span className="text-xs font-medium">{post.retweets_count}</span>
+                        )}
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={(e) => { e.stopPropagation(); handleLike(post.id); }}
+                        className={`hover:text-red-500 hover:bg-red-500/10 gap-1.5 h-9 px-2 rounded-lg ${
+                          post.is_liked ? 'text-red-500' : ''
+                        }`}
+                      >
+                        <Heart size={19} fill={post.is_liked ? 'currentColor' : 'none'} strokeWidth={2} />
+                        {post.likes_count > 0 && (
+                          <span className="text-xs font-medium">{post.likes_count}</span>
+                        )}
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="hover:text-primary hover:bg-primary/10 gap-1.5 h-9 px-2 rounded-lg"
+                        onClick={(e) => { e.stopPropagation(); handleShare(post); }}
+                      >
+                        <Share size={19} strokeWidth={2} />
+                        {post.shares_count > 0 && (
+                          <span className="text-xs font-medium">{post.shares_count}</span>
+                        )}
+                      </Button>
+
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={(e) => { e.stopPropagation(); handleBookmark(post.id); }}
+                        className={`hover:text-primary hover:bg-primary/10 gap-1.5 h-9 px-2 rounded-lg ml-auto ${
+                          post.is_bookmarked ? 'text-primary' : ''
+                        }`}
+                      >
+                        <Bookmark size={19} fill={post.is_bookmarked ? 'currentColor' : 'none'} strokeWidth={2} />
+                      </Button>
                     </div>
                   </Card>
                 ))

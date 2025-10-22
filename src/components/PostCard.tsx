@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { VerificationBadge } from "@/components/VerificationBadge";
 
 interface PostCardProps {
   id: string;
@@ -11,6 +12,7 @@ interface PostCardProps {
   author: string;
   authorUsername?: string;
   authorAvatar?: string;
+  authorBadge?: string | null;
   likes: string;
   comments: string;
   retweets?: string;
@@ -32,7 +34,8 @@ export function PostCard({
   content, 
   author, 
   authorUsername, 
-  authorAvatar, 
+  authorAvatar,
+  authorBadge,
   likes, 
   comments, 
   retweets = "0",
@@ -87,10 +90,10 @@ export function PostCard({
 
   return (
     <div 
-      className="group cursor-pointer transition-all duration-200 hover:bg-muted/30 p-4 rounded-lg border border-transparent hover:border-border"
+      className="group cursor-pointer transition-colors duration-200 hover:bg-muted/50 border-b border-border/50 last:border-b-0"
       onClick={() => navigate(`/post/${id}`)}
     >
-      <div className="flex items-start gap-3 mb-3">
+      <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         <Avatar className="w-10 h-10 flex-shrink-0">
           {authorAvatar && <AvatarImage src={authorAvatar} />}
           <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-sm font-medium">
@@ -99,88 +102,86 @@ export function PostCard({
         </Avatar>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="font-semibold text-sm text-foreground">{author}</p>
-            <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground">{timestamp}</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <p className="font-semibold text-sm text-foreground hover:underline truncate" onClick={(e) => e.stopPropagation()}>{author}</p>
+              {authorBadge && (
+                <VerificationBadge type={authorBadge as any} size={14} className="flex-shrink-0" />
+              )}
+              <span className="text-xs text-muted-foreground flex-shrink-0">{timestamp}</span>
+            </div>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 text-muted-foreground hover:text-foreground -mr-2 flex-shrink-0"
+              onClick={handleMoreClick}
+            >
+              <MoreVertical size={16} />
+            </Button>
           </div>
           
-          <h3 className="font-semibold text-base leading-snug mb-2 text-foreground">
-            {title}
-          </h3>
-          
-          <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+          <p className="text-[15px] text-foreground leading-normal mb-3 whitespace-pre-wrap">
             {content}
           </p>
 
           {image && (
-            <div className="relative w-full rounded-lg overflow-hidden bg-muted/50 mb-3">
+            <div className="relative w-full rounded-xl overflow-hidden bg-muted/50 mb-3 border border-border/50">
               <img 
                 src={image} 
                 alt="Post image" 
                 className="w-full aspect-video object-cover"
                 onError={(e) => {
-                  // Hide image if it fails to load
                   e.currentTarget.style.display = 'none';
                 }}
               />
             </div>
           )}
-
-          <div className="flex items-center gap-1">
-            <button 
-              className={`flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors min-w-[60px] ${localLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500 hover:bg-red-500/10'}`}
-              onClick={handleLikeClick}
-            >
-              <Heart size={20} className={localLiked ? 'fill-current' : ''} strokeWidth={2} />
-              <span className="text-xs font-medium">{localLikes}</span>
-            </button>
-
-            <button 
-              className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors min-w-[60px]"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/post/${id}`);
-              }}
-            >
-              <MessageCircle size={20} strokeWidth={2} />
-              <span className="text-xs font-medium">{comments}</span>
-            </button>
-
-            <button 
-              className={`flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors min-w-[60px] ${localRetweeted ? 'text-green-500' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'}`}
-              onClick={handleRetweetClick}
-            >
-              <Repeat2 size={20} strokeWidth={2} />
-              <span className="text-xs font-medium">{localRetweets}</span>
-            </button>
-
-            <button 
-              className="flex flex-col items-center gap-0.5 p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors min-w-[60px]"
-              onClick={handleShareClick}
-            >
-              <Share2 size={20} strokeWidth={2} />
-              <span className="text-xs font-medium">{shares}</span>
-            </button>
-
-            <button 
-              className={`flex flex-col items-center gap-0.5 p-2 rounded-lg transition-colors min-w-[60px] ml-auto ${localBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
-              onClick={handleBookmarkClick}
-            >
-              <Bookmark size={20} className={localBookmarked ? 'fill-current' : ''} strokeWidth={2} />
-              <span className="text-xs font-medium">Save</span>
-            </button>
-          </div>
         </div>
+      </div>
 
-        <Button 
-          size="icon" 
-          variant="ghost" 
-          className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground"
-          onClick={handleMoreClick}
+      {/* Interaction buttons row */}
+      <div className="flex items-center px-4 pb-3 gap-1">
+        <button 
+          className={`flex items-center gap-1.5 p-2 rounded-lg transition-colors ${localLiked ? 'text-red-500' : 'text-muted-foreground hover:text-red-500 hover:bg-red-500/10'}`}
+          onClick={handleLikeClick}
         >
-          <MoreVertical size={16} />
-        </Button>
+          <Heart size={19} className={localLiked ? 'fill-current' : ''} strokeWidth={2} />
+          {localLikes > 0 && <span className="text-xs font-medium">{localLikes}</span>}
+        </button>
+
+        <button 
+          className="flex items-center gap-1.5 p-2 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/post/${id}`);
+          }}
+        >
+          <MessageCircle size={19} strokeWidth={2} />
+          {parseInt(comments) > 0 && <span className="text-xs font-medium">{comments}</span>}
+        </button>
+
+        <button 
+          className={`flex items-center gap-1.5 p-2 rounded-lg transition-colors ${localRetweeted ? 'text-green-500' : 'text-muted-foreground hover:text-green-500 hover:bg-green-500/10'}`}
+          onClick={handleRetweetClick}
+        >
+          <Repeat2 size={19} strokeWidth={2} />
+          {localRetweets > 0 && <span className="text-xs font-medium">{localRetweets}</span>}
+        </button>
+
+        <button 
+          className="flex items-center gap-1.5 p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          onClick={handleShareClick}
+        >
+          <Share2 size={19} strokeWidth={2} />
+          {parseInt(shares) > 0 && <span className="text-xs font-medium">{shares}</span>}
+        </button>
+
+        <button 
+          className={`flex items-center gap-1.5 p-2 rounded-lg transition-colors ml-auto ${localBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+          onClick={handleBookmarkClick}
+        >
+          <Bookmark size={19} className={localBookmarked ? 'fill-current' : ''} strokeWidth={2} />
+        </button>
       </div>
     </div>
   );

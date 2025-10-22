@@ -230,9 +230,9 @@ export default function Home() {
           </Tabs>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-1">
+        <div className="max-w-2xl mx-auto border-x border-border/50">
           {error && (
-            <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-lg">
+            <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive border-b border-border/50">
               <AlertCircle className="h-5 w-5" />
               <p>{error}</p>
             </div>
@@ -241,7 +241,7 @@ export default function Home() {
           {loading ? (
             // Loading skeletons
             Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="p-4 bg-card rounded-lg space-y-3">
+              <div key={i} className="p-4 border-b border-border/50 space-y-3">
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-10 w-10 rounded-full" />
                   <div className="space-y-2">
@@ -259,7 +259,7 @@ export default function Home() {
               </div>
             ))
           ) : posts.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-muted-foreground border-b border-border/50">
               <p className="text-lg">No posts yet</p>
               <p className="text-sm mt-2">Be the first to create content!</p>
             </div>
@@ -273,6 +273,7 @@ export default function Home() {
                 author={post.profiles.full_name || 'Anonymous'}
                 authorUsername={post.profiles.username}
                 authorAvatar={post.profiles.avatar_url || undefined}
+                authorBadge={post.profiles.badge_type}
                 likes={(post.likes_count || 0).toString()}
                 comments={(post.comments_count || 0).toString()}
                 retweets={(post.retweets_count || 0).toString()}
