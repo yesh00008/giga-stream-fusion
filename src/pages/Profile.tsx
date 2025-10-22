@@ -31,9 +31,13 @@ export default function Profile() {
   const [showFollowingDialog, setShowFollowingDialog] = useState(false);
   const [followers, setFollowers] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [followRequestPending, setFollowRequestPending] = useState(false);
+  const [followRequestsCount, setFollowRequestsCount] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [profile, setProfile] = useState({
     name: "",
     username: "",
@@ -50,6 +54,8 @@ export default function Profile() {
     followers_count: 0,
     following_count: 0,
     posts_count: 0,
+    is_private: false,
+    id: "",
   });
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [userBadges, setUserBadges] = useState<any[]>([]);
@@ -69,6 +75,7 @@ export default function Profile() {
       fetchUserPosts();
       if (isOwnProfile) {
         fetchUserBadges();
+        fetchFollowRequests();
       } else {
         checkFollowStatus();
       }
@@ -168,6 +175,8 @@ export default function Profile() {
           followers_count: data.followers_count || 0,
           following_count: data.following_count || 0,
           posts_count: data.posts_count || 0,
+          is_private: data.is_private || false,
+          id: data.id || '',
         });
         console.log('Profile state updated successfully');
       } else {
@@ -238,26 +247,49 @@ export default function Profile() {
   };
 
   const checkFollowStatus = async () => {
-    if (!user?.id || !profile.username) return;
+    if (!user?.id || !urlUsername) return;
 
     try {
-      // Get the profile ID of the user being viewed
-      const { data: targetProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('username', urlUsername)
-        .single();
+      // Optimized: Single query to check both profile and follow status
+      const { data: result, error } = await supabase.rpc('check_follow_and_request_status', {
+        viewer_id: user.id,
+        target_username: urlUsername
+      });
 
-      if (!targetProfile) return;
+      if (error) {
+        // Fallback to manual queries if RPC doesn't exist
+        const { data: targetProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', urlUsername)
+          .single();
 
-      const { data } = await supabase
-        .from('followers')
-        .select('id')
-        .eq('follower_id', user.id)
-        .eq('following_id', targetProfile.id)
-        .maybeSingle();
+        if (!targetProfile) return;
 
-      setIsFollowing(!!data);
+        // Check if following
+        const { data: followData } = await supabase
+          .from('followers')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', targetProfile.id)
+          .maybeSingle();
+
+        setIsFollowing(!!followData);
+
+        // Check for pending request
+        const { data: requestData } = await supabase
+          .from('follow_requests')
+          .select('id')
+          .eq('requester_id', user.id)
+          .eq('target_id', targetProfile.id)
+          .eq('status', 'pending')
+          .maybeSingle();
+
+        setFollowRequestPending(!!requestData);
+      } else {
+        setIsFollowing(result?.is_following || false);
+        setFollowRequestPending(result?.has_pending_request || false);
+      }
     } catch (error) {
       console.error('Error checking follow status:', error);
     }
@@ -271,10 +303,10 @@ export default function Profile() {
 
     setFollowLoading(true);
     try {
-      // Get the profile ID of the user being viewed
+      // Get the full profile of the user being viewed
       const { data: targetProfile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, is_private, username')
         .eq('username', urlUsername)
         .single();
 
@@ -299,29 +331,311 @@ export default function Profile() {
           followers_count: Math.max(0, prev.followers_count - 1)
         }));
         toast.success('Unfollowed');
-      } else {
-        // Follow
+      } else if (followRequestPending) {
+        // Cancel follow request
         const { error } = await supabase
-          .from('followers')
-          .insert([{
-            follower_id: user.id,
-            following_id: targetProfile.id
-          }]);
+          .from('follow_requests')
+          .delete()
+          .eq('requester_id', user.id)
+          .eq('target_id', targetProfile.id);
 
         if (error) throw error;
 
-        setIsFollowing(true);
-        setProfile(prev => ({
-          ...prev,
-          followers_count: prev.followers_count + 1
-        }));
-        toast.success('Following');
+        setFollowRequestPending(false);
+        toast.success('Follow request cancelled');
+      } else {
+        // Check if profile is private
+        if (targetProfile.is_private) {
+          // Send follow request
+          const { error } = await supabase
+            .from('follow_requests')
+            .insert([{
+              requester_id: user.id,
+              target_id: targetProfile.id
+            }]);
+
+          if (error) {
+            // Check if it's a duplicate error
+            if (error.code === '23505') {
+              toast.info('Follow request already sent');
+              setFollowRequestPending(true);
+            } else {
+              throw error;
+            }
+          } else {
+            setFollowRequestPending(true);
+            toast.success('Follow request sent');
+          }
+        } else {
+          // Public profile - follow directly
+          // First check if already following to prevent duplicate
+          const { data: existingFollow } = await supabase
+            .from('followers')
+            .select('id')
+            .eq('follower_id', user.id)
+            .eq('following_id', targetProfile.id)
+            .maybeSingle();
+
+          if (existingFollow) {
+            toast.info('Already following');
+            setIsFollowing(true);
+            return;
+          }
+
+          const { error } = await supabase
+            .from('followers')
+            .insert([{
+              follower_id: user.id,
+              following_id: targetProfile.id
+            }]);
+
+          if (error) {
+            if (error.code === '23505') {
+              toast.info('Already following');
+              setIsFollowing(true);
+            } else {
+              throw error;
+            }
+          } else {
+            setIsFollowing(true);
+            setProfile(prev => ({
+              ...prev,
+              followers_count: prev.followers_count + 1
+            }));
+            toast.success('Following');
+          }
+        }
       }
     } catch (error: any) {
       console.error('Error following/unfollowing:', error);
       toast.error(error.message || 'Action failed. Please try again.');
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const fetchFollowRequests = async () => {
+    if (!user?.id || !isOwnProfile) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('follow_requests')
+        .select(`
+          id,
+          created_at,
+          requester:requester_id (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            badge_type,
+            bio
+          )
+        `)
+        .eq('target_id', user.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setPendingRequests(data || []);
+      setFollowRequestsCount((data || []).length);
+    } catch (error) {
+      console.error('Error fetching follow requests:', error);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string, requesterId: string) => {
+    try {
+      // Update request status to accepted (trigger will create follower relationship)
+      const { error } = await supabase
+        .from('follow_requests')
+        .update({ status: 'accepted' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      setFollowRequestsCount(prev => Math.max(0, prev - 1));
+      setProfile(prev => ({
+        ...prev,
+        followers_count: prev.followers_count + 1
+      }));
+
+      toast.success('Follow request accepted');
+    } catch (error: any) {
+      console.error('Error accepting request:', error);
+      toast.error('Failed to accept request');
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('follow_requests')
+        .update({ status: 'rejected' })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      setFollowRequestsCount(prev => Math.max(0, prev - 1));
+
+      toast.success('Follow request rejected');
+    } catch (error: any) {
+      console.error('Error rejecting request:', error);
+      toast.error('Failed to reject request');
+    }
+  };
+
+  const fetchFollowers = async () => {
+    try {
+      const profileId = profile.id || user?.id;
+      if (!profileId) return;
+
+      const { data, error } = await supabase
+        .from('followers')
+        .select(`
+          id,
+          created_at,
+          follower_id
+        `)
+        .eq('following_id', profileId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profile data for each follower
+      if (data && data.length > 0) {
+        const followerIds = data.map(f => f.follower_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url, badge_type, bio')
+          .in('id', followerIds);
+
+        // Check which followers the current user is following
+        if (user?.id) {
+          const { data: followingData } = await supabase
+            .from('followers')
+            .select('following_id')
+            .eq('follower_id', user.id)
+            .in('following_id', followerIds);
+
+          const followingSet: Record<string, boolean> = {};
+          followingData?.forEach(f => {
+            followingSet[f.following_id] = true;
+          });
+          setFollowingMap(followingSet);
+        }
+
+        const followersWithProfiles = data.map(follower => ({
+          ...follower,
+          follower: profiles?.find(p => p.id === follower.follower_id)
+        }));
+
+        setFollowers(followersWithProfiles);
+      } else {
+        setFollowers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+      toast.error('Failed to load followers');
+    }
+  };
+
+  const fetchFollowing = async () => {
+    try {
+      const profileId = profile.id || user?.id;
+      if (!profileId) return;
+
+      const { data, error } = await supabase
+        .from('followers')
+        .select(`
+          id,
+          created_at,
+          following_id
+        `)
+        .eq('follower_id', profileId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch profile data for each following
+      if (data && data.length > 0) {
+        const followingIds = data.map(f => f.following_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, full_name, avatar_url, badge_type, bio')
+          .in('id', followingIds);
+
+        // All users in this list are already followed by definition
+        const followingSet: Record<string, boolean> = {};
+        followingIds.forEach(id => {
+          followingSet[id] = true;
+        });
+        setFollowingMap(followingSet);
+
+        const followingWithProfiles = data.map(following => ({
+          ...following,
+          following: profiles?.find(p => p.id === following.following_id)
+        }));
+
+        setFollowing(followingWithProfiles);
+      } else {
+        setFollowing([]);
+      }
+    } catch (error) {
+      console.error('Error fetching following:', error);
+      toast.error('Failed to load following');
+    }
+  };
+
+  const handleFollowFromList = async (targetUserId: string, currentlyFollowing: boolean) => {
+    if (!user?.id) {
+      toast.error('Please sign in');
+      return;
+    }
+
+    try {
+      if (currentlyFollowing) {
+        // Unfollow
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', targetUserId);
+
+        setFollowingMap(prev => ({ ...prev, [targetUserId]: false }));
+        toast.success('Unfollowed');
+      } else {
+        // Check if already following
+        const { data: existing } = await supabase
+          .from('followers')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', targetUserId)
+          .maybeSingle();
+
+        if (existing) {
+          setFollowingMap(prev => ({ ...prev, [targetUserId]: true }));
+          return;
+        }
+
+        // Follow
+        await supabase
+          .from('followers')
+          .insert([{
+            follower_id: user.id,
+            following_id: targetUserId
+          }]);
+
+        setFollowingMap(prev => ({ ...prev, [targetUserId]: true }));
+        toast.success('Following');
+      }
+    } catch (error: any) {
+      console.error('Error following/unfollowing:', error);
+      toast.error('Action failed');
     }
   };
 
@@ -354,52 +668,6 @@ export default function Profile() {
     } catch (error: any) {
       console.error('Error fetching badges:', error);
       // Badges are optional, don't show error toast
-    }
-  };
-
-  const fetchFollowers = async () => {
-    try {
-      if (!user?.id) return;
-
-      const { data, error } = await supabase
-        .from('follows')
-        .select(`
-          follower_id,
-          profiles!follows_follower_id_fkey(id, username, full_name, avatar_url, verified)
-        `)
-        .eq('following_id', user.id);
-
-      if (error) {
-        console.error('Error fetching followers:', error);
-        return;
-      }
-
-      setFollowers(data?.map(item => item.profiles) || []);
-    } catch (error: any) {
-      console.error('Error fetching followers:', error);
-    }
-  };
-
-  const fetchFollowing = async () => {
-    try {
-      if (!user?.id) return;
-
-      const { data, error } = await supabase
-        .from('follows')
-        .select(`
-          following_id,
-          profiles!follows_following_id_fkey(id, username, full_name, avatar_url, verified)
-        `)
-        .eq('follower_id', user.id);
-
-      if (error) {
-        console.error('Error fetching following:', error);
-        return;
-      }
-
-      setFollowing(data?.map(item => item.profiles) || []);
-    } catch (error: any) {
-      console.error('Error fetching following:', error);
     }
   };
 
@@ -876,10 +1144,12 @@ export default function Profile() {
                       <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     ) : isFollowing ? (
                       <UserCheck className="w-4 h-4 mr-1" />
+                    ) : followRequestPending ? (
+                      <Loader2 className="w-4 h-4 mr-1" />
                     ) : (
                       <UserPlus className="w-4 h-4 mr-1" />
                     )}
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? 'Following' : followRequestPending ? 'Requested' : 'Follow'}
                   </Button>
                 )}
                 <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold" onClick={copyProfileLink}>
@@ -1026,10 +1296,12 @@ export default function Profile() {
                         <Loader2 size={16} className="mr-2 animate-spin" />
                       ) : isFollowing ? (
                         <UserCheck size={16} className="mr-2" />
+                      ) : followRequestPending ? (
+                        <Loader2 size={16} className="mr-2" />
                       ) : (
                         <UserPlus size={16} className="mr-2" />
                       )}
-                      {isFollowing ? 'Following' : 'Follow'}
+                      {followLoading ? 'Loading...' : isFollowing ? 'Following' : followRequestPending ? 'Requested' : 'Follow'}
                     </Button>
                   )}
                   <DropdownMenu>
@@ -1206,12 +1478,9 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="saved" className="mt-0">
-            <div className="grid grid-cols-3 gap-1">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="aspect-square bg-muted flex items-center justify-center text-3xl sm:text-4xl cursor-pointer hover:opacity-80 transition-opacity">
-                  {["💾", "⭐", "📌", "💫", "🔖", "✨"][i - 1]}
-                </div>
-              ))}
+            <div className="text-center py-12 text-muted-foreground">
+              <Bookmark className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No saved posts yet</p>
             </div>
           </TabsContent>
         </Tabs>
@@ -1228,27 +1497,62 @@ export default function Profile() {
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
                 {followers.length > 0 ? (
-                  followers.map((follower) => (
-                    <div key={follower.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={follower.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {follower.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{follower.name || 'Anonymous'}</p>
-                          <p className="text-xs text-muted-foreground">@{follower.username || 'user'}</p>
+                  followers.map((item: any) => {
+                    const followerProfile = item.follower;
+                    if (!followerProfile) return null;
+                    const isFollowingThisUser = followingMap[followerProfile.id];
+                    const isOwnUser = user?.id === followerProfile.id;
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <div 
+                          className="flex items-center gap-3 flex-1 cursor-pointer"
+                          onClick={() => {
+                            navigate(`/profile/${followerProfile.username}`);
+                            setShowFollowersDialog(false);
+                          }}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={followerProfile.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {followerProfile.full_name?.charAt(0)?.toUpperCase() || followerProfile.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <p className="font-medium text-sm truncate">{followerProfile.full_name || followerProfile.username}</p>
+                              {followerProfile.badge_type && (
+                                <VerificationBadge type={followerProfile.badge_type} />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">@{followerProfile.username}</p>
+                            {followerProfile.bio && (
+                              <p className="text-xs text-muted-foreground truncate mt-1">{followerProfile.bio}</p>
+                            )}
+                          </div>
                         </div>
+                        {!isOwnUser && (
+                          <Button
+                            size="sm"
+                            variant={isFollowingThisUser ? "outline" : "default"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFollowFromList(followerProfile.id, isFollowingThisUser);
+                            }}
+                            className="ml-2"
+                          >
+                            {isFollowingThisUser ? 'Following' : 'Follow'}
+                          </Button>
+                        )}
                       </div>
-                      <Button size="sm" variant="outline">
-                        Follow
-                      </Button>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>No followers yet</p>
                   </div>
                 )}
@@ -1269,27 +1573,62 @@ export default function Profile() {
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
                 {following.length > 0 ? (
-                  following.map((followed) => (
-                    <div key={followed.id} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={followed.avatar_url || undefined} />
-                          <AvatarFallback>
-                            {followed.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">{followed.name || 'Anonymous'}</p>
-                          <p className="text-xs text-muted-foreground">@{followed.username || 'user'}</p>
+                  following.map((item: any) => {
+                    const followedProfile = item.following;
+                    if (!followedProfile) return null;
+                    const isFollowingThisUser = followingMap[followedProfile.id];
+                    const isOwnUser = user?.id === followedProfile.id;
+                    
+                    return (
+                      <div 
+                        key={item.id} 
+                        className="flex items-center justify-between hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                      >
+                        <div 
+                          className="flex items-center gap-3 flex-1 cursor-pointer"
+                          onClick={() => {
+                            navigate(`/profile/${followedProfile.username}`);
+                            setShowFollowingDialog(false);
+                          }}
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage src={followedProfile.avatar_url || undefined} />
+                            <AvatarFallback>
+                              {followedProfile.full_name?.charAt(0)?.toUpperCase() || followedProfile.username?.charAt(0)?.toUpperCase() || 'U'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1">
+                              <p className="font-medium text-sm truncate">{followedProfile.full_name || followedProfile.username}</p>
+                              {followedProfile.badge_type && (
+                                <VerificationBadge type={followedProfile.badge_type} />
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate">@{followedProfile.username}</p>
+                            {followedProfile.bio && (
+                              <p className="text-xs text-muted-foreground truncate mt-1">{followedProfile.bio}</p>
+                            )}
+                          </div>
                         </div>
+                        {!isOwnUser && (
+                          <Button
+                            size="sm"
+                            variant={isFollowingThisUser ? "outline" : "default"}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleFollowFromList(followedProfile.id, isFollowingThisUser);
+                            }}
+                            className="ml-2"
+                          >
+                            {isFollowingThisUser ? 'Following' : 'Follow'}
+                          </Button>
+                        )}
                       </div>
-                      <Button size="sm" variant="outline">
-                        Unfollow
-                      </Button>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
+                    <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p>Not following anyone yet</p>
                   </div>
                 )}

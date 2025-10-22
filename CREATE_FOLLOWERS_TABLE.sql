@@ -53,6 +53,12 @@ BEGIN
                  WHERE table_name = 'profiles' AND column_name = 'following_count') THEN
     ALTER TABLE public.profiles ADD COLUMN following_count INTEGER DEFAULT 0;
   END IF;
+  
+  -- Add is_private column for private profiles
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name = 'profiles' AND column_name = 'is_private') THEN
+    ALTER TABLE public.profiles ADD COLUMN is_private BOOLEAN DEFAULT false;
+  END IF;
 END $$;
 
 -- Function to update follower counts
