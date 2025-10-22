@@ -95,9 +95,11 @@ export function PostCard({
     >
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         <Avatar className="w-10 h-10 flex-shrink-0">
-          {authorAvatar && <AvatarImage src={authorAvatar} />}
+          {authorAvatar ? (
+            <AvatarImage src={authorAvatar} alt={author} />
+          ) : null}
           <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-sm font-medium">
-            {author[0]}
+            {author?.charAt(0)?.toUpperCase() || '?'}
           </AvatarFallback>
         </Avatar>
 

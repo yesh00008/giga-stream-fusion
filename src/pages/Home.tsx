@@ -52,6 +52,9 @@ export default function Home() {
       // Fetch latest posts from database using interaction-service
       const data = await getPosts(user?.id, 50);
       
+      // Debug: Check what profile data we're getting
+      console.log('First post profile data:', data[0]?.profiles);
+      
       setPosts(data);
     } catch (err) {
       console.error('Error loading posts:', err);
