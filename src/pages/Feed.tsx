@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Heart, MessageCircle, Repeat2, Share, Bookmark, MoreHorizontal, Image as ImageIcon, Smile, AtSign, Hash, BarChart, MapPin, Calendar, X, Upload, Film, Mic, Edit, Trash2, Send, Save } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Share, Bookmark, MoreHorizontal, Image as ImageIcon, Smile, AtSign, Hash, BarChart, MapPin, Calendar, X, Upload, Film, Mic, Edit, Trash2, Send, Save, Paperclip, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,9 +85,11 @@ export default function Feed() {
   const [activeTab, setActiveTab] = useState("for-you");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [showPollCreator, setShowPollCreator] = useState(false);
   const [pollOptions, setPollOptions] = useState(["", ""]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   
   // Edit state
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -218,6 +220,21 @@ export default function Feed() {
       };
       reader.readAsDataURL(file);
     });
+  };
+
+  const handleAttachmentSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length + selectedFiles.length > 10) {
+      toast.error('Maximum 10 files allowed');
+      return;
+    }
+
+    setSelectedFiles([...selectedFiles, ...files]);
+    toast.success(`${files.length} file(s) attached`);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const removeImage = (index: number) => {
@@ -403,7 +420,7 @@ export default function Feed() {
 
           <TabsContent value="for-you" className="mt-0">
             {/* Create Post Section - Twitter/Threads Style */}
-            <div className="p-3 sm:p-4 border-b border-border">
+            <div className="p-3 sm:p-4 border-b border-border bg-background">
               <div className="flex gap-3">
                 <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
                   <AvatarImage src={user?.user_metadata?.avatar_url} />
@@ -416,9 +433,30 @@ export default function Feed() {
                     placeholder="What's happening?"
                     value={newPost}
                     onChange={(e) => setNewPost(e.target.value)}
-                    className="min-h-[60px] sm:min-h-[80px] border-0 focus-visible:ring-0 resize-none p-0 text-base sm:text-xl placeholder:text-muted-foreground/60"
+                    className="min-h-[60px] sm:min-h-[80px] border-0 focus-visible:ring-0 resize-none p-0 text-base sm:text-xl placeholder:text-muted-foreground/60 bg-transparent shadow-none"
                     maxLength={MAX_CHAR_COUNT}
                   />
+
+                  {/* Attached Files Display */}
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {selectedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/30">
+                          <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm text-foreground flex-1 truncate">{file.name}</span>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">{(file.size / 1024).toFixed(1)}KB</span>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Image Previews - Styled like Twitter */}
                   {imagePreview.length > 0 && (
@@ -519,26 +557,38 @@ export default function Feed() {
                         multiple
                         className="hidden"
                       />
+                      <input
+                        type="file"
+                        ref={attachmentInputRef}
+                        onChange={handleAttachmentSelect}
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar,video/*,audio/*"
+                        multiple
+                        className="hidden"
+                      />
                       <Button 
                         size="icon" 
                         variant="ghost" 
                         className="h-9 w-9 text-primary hover:bg-primary/10 rounded-full"
                         onClick={() => fileInputRef.current?.click()}
+                        title="Add images"
                       >
                         <ImageIcon className="w-5 h-5" />
                       </Button>
                       <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-9 w-9 text-primary hover:bg-primary/10 rounded-full hidden sm:flex"
+                        className="h-9 w-9 text-primary hover:bg-primary/10 rounded-full"
+                        onClick={() => attachmentInputRef.current?.click()}
+                        title="Attach files (PDF, PPT, Videos, etc.)"
                       >
-                        <Film className="w-5 h-5" />
+                        <Paperclip className="w-5 h-5" />
                       </Button>
                       <Button 
                         size="icon" 
                         variant="ghost" 
                         className="h-9 w-9 text-primary hover:bg-primary/10 rounded-full"
                         onClick={() => setShowPollCreator(!showPollCreator)}
+                        title="Create a poll"
                       >
                         <BarChart className="w-5 h-5" />
                       </Button>
@@ -637,7 +687,13 @@ export default function Feed() {
                     )}
                     
                     <div className="flex gap-3 px-4 pt-4 pb-2">
-                      <Avatar className="w-10 h-10 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <Avatar 
+                        className="w-10 h-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${post.author.username}`);
+                        }}
+                      >
                         <AvatarImage src={post.author.avatar_url} />
                         <AvatarFallback>
                           {post.author.name[0]?.toUpperCase()}
@@ -647,7 +703,13 @@ export default function Feed() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <span className="font-semibold text-sm hover:underline truncate" onClick={(e) => e.stopPropagation()}>
+                            <span 
+                              className="font-semibold text-sm hover:underline truncate cursor-pointer" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/profile/${post.author.username}`);
+                              }}
+                            >
                               {post.author.name}
                             </span>
                             {post.author.badge_type && (

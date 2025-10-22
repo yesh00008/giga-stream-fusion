@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,8 +22,10 @@ import { toast } from "sonner";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { username: urlUsername } = useParams<{ username: string }>();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const isOwnProfile = !urlUsername || urlUsername === user?.user_metadata?.username;
   const [copied, setCopied] = useState(false);
   const [showFollowersDialog, setShowFollowersDialog] = useState(false);
   const [showFollowingDialog, setShowFollowingDialog] = useState(false);
@@ -60,12 +62,14 @@ export default function Profile() {
   const [tempImageUrl, setTempImageUrl] = useState<string>("");
 
   useEffect(() => {
-    if (user) {
+    if (urlUsername || user) {
       fetchProfileData();
       fetchUserPosts();
-      fetchUserBadges();
+      if (isOwnProfile) {
+        fetchUserBadges();
+      }
     }
-  }, [user]);
+  }, [user, urlUsername]);
 
   useEffect(() => {
     setEditedProfile(profile);
@@ -75,26 +79,35 @@ export default function Profile() {
     try {
       setLoading(true);
       
-      if (!user?.id) {
-        console.error('No user ID available');
-        toast.error('Please log in to view your profile');
+      let profileQuery;
+      
+      if (urlUsername) {
+        // Viewing another user's profile
+        profileQuery = supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', urlUsername)
+          .maybeSingle();
+      } else if (user?.id) {
+        // Viewing own profile
+        profileQuery = supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+      } else {
+        console.error('No user ID or username available');
+        toast.error('Profile not found');
         setLoading(false);
         return;
       }
       
-      console.log('Fetching profile for user:', user.id);
-      
-      // First, try to get the profile
-      let { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle(); // Use maybeSingle instead of single to handle 0 rows
+      let { data, error } = await profileQuery;
 
       console.log('Profile query result:', { data, error });
 
-      // If profile doesn't exist, create it
-      if (!data && !error) {
+      // If profile doesn't exist and it's the current user, create it
+      if (!data && !error && isOwnProfile && user?.id) {
         console.log('Creating new profile for user:', user.id);
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
@@ -122,7 +135,14 @@ export default function Profile() {
 
       if (error) {
         console.error('Profile fetch error:', error);
+        toast.error('Failed to load profile');
         throw error;
+      }
+
+      if (!data) {
+        toast.error('Profile not found');
+        navigate('/');
+        return;
       }
 
       if (data) {
@@ -160,19 +180,33 @@ export default function Profile() {
 
   const fetchUserPosts = async () => {
     try {
-      if (!user?.id) {
+      let userId;
+      
+      if (urlUsername) {
+        // Get user ID from username
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', urlUsername)
+          .single();
+        
+        if (!profileData) return;
+        userId = profileData.id;
+      } else if (user?.id) {
+        userId = user.id;
+      } else {
         console.log('No user ID, skipping posts fetch');
         return;
       }
 
-      console.log('Fetching posts for user:', user.id);
+      console.log('Fetching posts for user:', userId);
       const { data, error } = await supabase
         .from('posts')
         .select(`
           *,
-          profiles:user_id (username, full_name, avatar_url, verified)
+          profiles:user_id (username, full_name, avatar_url, verified, badge_type)
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(10);
 
