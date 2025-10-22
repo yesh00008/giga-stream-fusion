@@ -977,6 +977,11 @@ export default function Profile() {
                       <VerificationBadge type={profile.badge_type} size={16} />
                     </button>
                   )}
+                  {profile.is_private && (
+                    <div title="Private account">
+                      <Lock size={14} className="text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1216,6 +1221,11 @@ export default function Profile() {
                       <button onClick={() => setShowBadgeInfo(true)} className="hover:opacity-80 transition-opacity">
                         <VerificationBadge type={profile.badge_type} size={24} />
                       </button>
+                    )}
+                    {profile.is_private && (
+                      <div title="Private account">
+                        <Lock size={16} className="text-muted-foreground" />
+                      </div>
                     )}
                     {profile.verified && !profile.badge_type && (
                       <Badge variant="default" className="text-xs">

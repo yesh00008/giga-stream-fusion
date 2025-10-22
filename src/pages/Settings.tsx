@@ -4,11 +4,72 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Bell, Shield, Globe, Palette, CreditCard } from "lucide-react";
+import { User, Bell, Shield, Globe, Palette, CreditCard, Lock, Unlock } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EncryptionSettings } from "@/components/EncryptionSettings";
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
 
 export default function Settings() {
+  const { user } = useAuth();
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPrivacySettings();
+  }, [user]);
+
+  const fetchPrivacySettings = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_private')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      setIsPrivate(data?.is_private || false);
+    } catch (error) {
+      console.error('Error fetching privacy settings:', error);
+    }
+  };
+
+  const handlePrivateAccountToggle = async (checked: boolean) => {
+    if (!user?.id) {
+      toast.error('Please sign in to change privacy settings');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_private: checked })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setIsPrivate(checked);
+      toast.success(
+        checked 
+          ? 'Account set to private. New followers will need your approval.' 
+          : 'Account set to public. Anyone can follow you.'
+      );
+    } catch (error: any) {
+      console.error('Error updating privacy settings:', error);
+      toast.error('Failed to update privacy settings');
+      // Revert the state on error
+      setIsPrivate(!checked);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-w-5xl mx-auto">
@@ -118,11 +179,33 @@ export default function Settings() {
 
             <Card className="p-6 gradient-card space-y-6">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Private Account</p>
-                  <p className="text-sm text-muted-foreground">Only approved followers can see your videos</p>
+                <div className="flex items-start gap-3">
+                  <div className="mt-1">
+                    {isPrivate ? (
+                      <Lock className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Unlock className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium">Private Account</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isPrivate 
+                        ? 'Your account is private. Only approved followers can see your posts.' 
+                        : 'Your account is public. Anyone can see your posts and follow you.'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {isPrivate 
+                        ? 'New followers will need to send a follow request which you can approve or reject.' 
+                        : 'Anyone can follow you without approval.'}
+                    </p>
+                  </div>
                 </div>
-                <Switch />
+                <Switch 
+                  checked={isPrivate} 
+                  onCheckedChange={handlePrivateAccountToggle}
+                  disabled={loading}
+                />
               </div>
 
               <div className="flex items-center justify-between">
