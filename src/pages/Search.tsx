@@ -1,283 +1,532 @@
-import { useState } from "react";
-import { Search as SearchIcon, Filter, TrendingUp, Clock, Users, Video, Hash, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search as SearchIcon, User, Hash, FileText, Video, Loader2, UserPlus, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
-import { MobileProfileHeader } from "@/components/MobileProfileHeader";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
-
-const trendingSearches = [
-  { query: "React Tutorial", count: "2.5M" },
-  { query: "JavaScript Tips", count: "1.8M" },
-  { query: "Web Development", count: "3.2M" },
-  { query: "TypeScript Guide", count: "1.5M" },
-  { query: "Next.js 14", count: "890K" },
-];
-
-const recentSearches = [
-  "Advanced React Patterns",
-  "CSS Grid Tutorial",
-  "Node.js Best Practices",
-  "TypeScript for Beginners",
-];
-
-const popularChannels = [
-  { name: "Tech Tutorials", subscribers: "1.2M", avatar: "TT", verified: true },
-  { name: "Code Masters", subscribers: "890K", avatar: "CM", verified: true },
-  { name: "Dev Tips", subscribers: "650K", avatar: "DT", verified: false },
-  { name: "Web Dev Pro", subscribers: "2.1M", avatar: "WD", verified: true },
-];
-
-const popularHashtags = [
-  { tag: "#WebDevelopment", posts: "45.2K" },
-  { tag: "#JavaScript", posts: "32.8K" },
-  { tag: "#ReactJS", posts: "28.5K" },
-  { tag: "#Programming", posts: "51.3K" },
-  { tag: "#CodingLife", posts: "18.7K" },
-];
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { VerificationBadge } from "@/components/VerificationBadge";
+import { PostCard } from "@/components/PostCard";
 
 export default function Search() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [recentSearchList, setRecentSearchList] = useState(recentSearches);
+  const [activeTab, setActiveTab] = useState("all");
+  const [loading, setLoading] = useState(false);
+  const [userResults, setUserResults] = useState<any[]>([]);
+  const [postResults, setPostResults] = useState<any[]>([]);
+  const [hashtagResults, setHashtagResults] = useState<any[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
+  const [followingUsers, setFollowingUsers] = useState<string[]>([]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    loadTrendingContent();
+    if (user?.id) {
+      loadFollowingUsers();
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (searchQuery.trim()) {
-      // Add to recent searches
-      setRecentSearchList([searchQuery, ...recentSearchList.slice(0, 9)]);
+      const debounceTimer = setTimeout(() => {
+        performSearch();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setUserResults([]);
+      setPostResults([]);
+      setHashtagResults([]);
+    }
+  }, [searchQuery]);
+
+  const loadFollowingUsers = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data } = await supabase
+        .from('followers')
+        .select('following_id')
+        .eq('follower_id', user.id);
+      
+      setFollowingUsers(data?.map(f => f.following_id) || []);
+    } catch (error) {
+      console.error('Error loading following:', error);
     }
   };
 
-  const removeRecentSearch = (index: number) => {
-    setRecentSearchList(recentSearchList.filter((_, i) => i !== index));
+  const loadTrendingContent = async () => {
+    try {
+      const { data: posts } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            badge_type
+          )
+        `)
+        .order('likes_count', { ascending: false })
+        .limit(10);
+
+      if (posts) {
+        setTrendingPosts(posts);
+      }
+    } catch (error) {
+      console.error('Error loading trending:', error);
+    }
+  };
+
+  const performSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    try {
+      const query = searchQuery.toLowerCase().trim();
+
+      // Search Users by username and full_name
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+        .limit(20);
+
+      setUserResults(users || []);
+
+      // Search Posts by content
+      const { data: posts } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles:user_id (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            badge_type
+          )
+        `)
+        .ilike('content', `%${query}%`)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      setPostResults(posts || []);
+
+      // Search for hashtags
+      if (query.startsWith('#')) {
+        const hashtagQuery = query.substring(1);
+        const { data: hashtagPosts } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            profiles:user_id (
+              id,
+              username,
+              full_name,
+              avatar_url,
+              badge_type
+            )
+          `)
+          .ilike('content', `%#${hashtagQuery}%`)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        setHashtagResults(hashtagPosts || []);
+      } else {
+        // Find hashtags in content
+        const { data: allPosts } = await supabase
+          .from('posts')
+          .select('content')
+          .ilike('content', `%#%`)
+          .limit(100);
+
+        const hashtags = new Map<string, number>();
+        allPosts?.forEach(post => {
+          const tags = post.content.match(/#\w+/g);
+          tags?.forEach(tag => {
+            const normalizedTag = tag.toLowerCase();
+            if (normalizedTag.includes(query)) {
+              hashtags.set(normalizedTag, (hashtags.get(normalizedTag) || 0) + 1);
+            }
+          });
+        });
+
+        const hashtagArray = Array.from(hashtags.entries())
+          .map(([tag, count]) => ({ tag, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10);
+
+        setHashtagResults(hashtagArray as any);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+      toast.error('Search failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFollow = async (targetUserId: string) => {
+    if (!user?.id) {
+      toast.error('Please sign in to follow users');
+      return;
+    }
+
+    try {
+      const isFollowing = followingUsers.includes(targetUserId);
+
+      if (isFollowing) {
+        await supabase
+          .from('followers')
+          .delete()
+          .eq('follower_id', user.id)
+          .eq('following_id', targetUserId);
+
+        setFollowingUsers(prev => prev.filter(id => id !== targetUserId));
+        toast.success('Unfollowed');
+      } else {
+        await supabase
+          .from('followers')
+          .insert([{
+            follower_id: user.id,
+            following_id: targetUserId
+          }]);
+
+        setFollowingUsers(prev => [...prev, targetUserId]);
+        toast.success('Following');
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing:', error);
+      toast.error('Action failed. Please try again.');
+    }
+  };
+
+  const renderUserResult = (profile: any) => {
+    const isFollowing = followingUsers.includes(profile.id);
+    const isOwnProfile = user?.id === profile.id;
+
+    return (
+      <Card 
+        key={profile.id}
+        className="p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 rounded-none"
+        onClick={() => navigate(`/profile/${profile.username}`)}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Avatar className="w-12 h-12 flex-shrink-0">
+              <AvatarImage src={profile.avatar_url} />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
+                {profile.full_name?.[0]?.toUpperCase() || profile.username?.[0]?.toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="font-semibold text-sm truncate">{profile.full_name || profile.username}</p>
+                {profile.badge_type && (
+                  <VerificationBadge type={profile.badge_type} size={14} />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">@{profile.username}</p>
+              {profile.bio && (
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{profile.bio}</p>
+              )}
+            </div>
+          </div>
+          {!isOwnProfile && (
+            <Button
+              size="sm"
+              variant={isFollowing ? "outline" : "default"}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFollow(profile.id);
+              }}
+              className="flex-shrink-0"
+            >
+              {isFollowing ? (
+                <>
+                  <UserCheck className="w-4 h-4 mr-1" />
+                  Following
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-1" />
+                  Follow
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
   };
 
   return (
     <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
-      <MobileProfileHeader username={user?.user_metadata?.username || user?.email?.split('@')[0] || 'user'} />
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Search Header */}
-        <div className="space-y-4">
-          <form onSubmit={handleSearch} className="relative">
+      <div className="max-w-4xl mx-auto">
+        {/* Search Bar */}
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border p-4">
+          <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
             <Input
-              placeholder="Search for videos, channels, hashtags..."
+              placeholder="Search users, posts, hashtags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-12 h-12 text-base border-2 focus-visible:ring-2"
+              className="pl-12 h-12 text-base"
             />
-            {searchQuery && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 -translate-y-1/2"
-                onClick={() => setSearchQuery("")}
-              >
-                <X size={18} />
-              </Button>
+            {loading && (
+              <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground animate-spin" size={20} />
             )}
-          </form>
-
-          {/* Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2">
-            <Button
-              variant={activeFilter === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveFilter("all")}
-              className="rounded-full"
-            >
-              All
-            </Button>
-            <Button
-              variant={activeFilter === "videos" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveFilter("videos")}
-              className="rounded-full"
-            >
-              <Video size={14} className="mr-1" />
-              Videos
-            </Button>
-            <Button
-              variant={activeFilter === "channels" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveFilter("channels")}
-              className="rounded-full"
-            >
-              <Users size={14} className="mr-1" />
-              Channels
-            </Button>
-            <Button
-              variant={activeFilter === "hashtags" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setActiveFilter("hashtags")}
-              className="rounded-full"
-            >
-              <Hash size={14} className="mr-1" />
-              Hashtags
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-full ml-auto">
-              <Filter size={14} className="mr-1" />
-              Filters
-            </Button>
           </div>
         </div>
 
-        <Tabs defaultValue="discover" className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="discover" className="flex-1">Discover</TabsTrigger>
-            <TabsTrigger value="recent" className="flex-1">Recent</TabsTrigger>
-          </TabsList>
+        {/* Search Results or Trending Content */}
+        {searchQuery.trim() ? (
+          <div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent sticky top-[73px] z-10 bg-background">
+                <TabsTrigger 
+                  value="all" 
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-6 py-3"
+                >
+                  All
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="users" 
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-6 py-3"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Users
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="posts" 
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-6 py-3"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="hashtags" 
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-6 py-3"
+                >
+                  <Hash className="w-4 h-4 mr-2" />
+                  Tags
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="discover" className="mt-6 space-y-6">
-            {/* Trending Searches */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={20} className="text-primary" />
-                <h2 className="text-lg font-semibold">Trending Searches</h2>
-              </div>
-              <div className="space-y-2">
-                {trendingSearches.map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSearchQuery(item.query)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl font-bold text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors">
-                        {index + 1}
-                      </span>
-                      <div className="text-left">
-                        <p className="font-medium">{item.query}</p>
-                        <p className="text-xs text-muted-foreground">{item.count} searches</p>
-                      </div>
-                    </div>
-                    <SearchIcon size={18} className="text-muted-foreground" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Popular Channels */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Users size={20} className="text-primary" />
-                <h2 className="text-lg font-semibold">Popular Channels</h2>
-              </div>
-              <div className="space-y-2">
-                {popularChannels.map((channel, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white">
-                          {channel.avatar}
-                        </AvatarFallback>
-                      </Avatar>
+              <TabsContent value="all" className="mt-0">
+                {userResults.length === 0 && postResults.length === 0 && hashtagResults.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <SearchIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No results found for "{searchQuery}"</p>
+                    <p className="text-sm mt-2">Try searching for users, posts, or hashtags</p>
+                  </div>
+                ) : (
+                  <>
+                    {userResults.length > 0 && (
                       <div>
-                        <div className="flex items-center gap-1">
-                          <p className="font-medium">{channel.name}</p>
-                          {channel.verified && (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                            </svg>
-                          )}
+                        <div className="px-4 py-3 bg-muted/30">
+                          <h3 className="font-semibold text-sm">People</h3>
                         </div>
-                        <p className="text-xs text-muted-foreground">{channel.subscribers} subscribers</p>
+                        {userResults.slice(0, 5).map(renderUserResult)}
+                        {userResults.length > 5 && (
+                          <Button
+                            variant="ghost"
+                            className="w-full rounded-none border-b"
+                            onClick={() => setActiveTab('users')}
+                          >
+                            View all {userResults.length} users
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                    <Button size="sm" variant="outline" className="rounded-full">
-                      Subscribe
-                    </Button>
+                    )}
+                    {postResults.length > 0 && (
+                      <div>
+                        <div className="px-4 py-3 bg-muted/30">
+                          <h3 className="font-semibold text-sm">Posts</h3>
+                        </div>
+                        {postResults.slice(0, 5).map((post) => (
+                          <PostCard
+                            key={post.id}
+                            id={post.id}
+                            title=""
+                            content={post.content}
+                            author={post.profiles?.full_name || post.profiles?.username || 'Unknown'}
+                            authorUsername={post.profiles?.username}
+                            authorAvatar={post.profiles?.avatar_url}
+                            authorBadge={post.profiles?.badge_type}
+                            likes={(post.likes_count || 0).toString()}
+                            comments={(post.comments_count || 0).toString()}
+                            retweets={(post.retweets_count || 0).toString()}
+                            shares={(post.shares_count || 0).toString()}
+                            timestamp={new Date(post.created_at).toLocaleDateString()}
+                            image={post.image_url}
+                          />
+                        ))}
+                        {postResults.length > 5 && (
+                          <Button
+                            variant="ghost"
+                            className="w-full rounded-none border-b"
+                            onClick={() => setActiveTab('posts')}
+                          >
+                            View all {postResults.length} posts
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                    {hashtagResults.length > 0 && Array.isArray(hashtagResults) && hashtagResults[0]?.tag && (
+                      <div>
+                        <div className="px-4 py-3 bg-muted/30">
+                          <h3 className="font-semibold text-sm">Hashtags</h3>
+                        </div>
+                        {hashtagResults.slice(0, 5).map((item: any, index: number) => (
+                          <Card
+                            key={index}
+                            className="p-4 hover:bg-muted/50 transition-colors cursor-pointer border-x-0 border-t-0 last:border-b-0 rounded-none"
+                            onClick={() => setSearchQuery(item.tag)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Hash className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-semibold">{item.tag}</p>
+                                <p className="text-sm text-muted-foreground">{item.count} posts</p>
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+
+              <TabsContent value="users" className="mt-0">
+                {userResults.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <User className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No users found</p>
                   </div>
-                ))}
-              </div>
-            </div>
+                ) : (
+                  userResults.map(renderUserResult)
+                )}
+              </TabsContent>
 
-            <Separator />
-
-            {/* Popular Hashtags */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Hash size={20} className="text-primary" />
-                <h2 className="text-lg font-semibold">Popular Hashtags</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {popularHashtags.map((hashtag, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSearchQuery(hashtag.tag)}
-                    className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
-                  >
-                    <div className="text-left">
-                      <p className="font-medium text-primary">{hashtag.tag}</p>
-                      <p className="text-xs text-muted-foreground">{hashtag.posts} posts</p>
-                    </div>
-                    <TrendingUp size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recent" className="mt-6">
-            {recentSearchList.length > 0 ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock size={20} className="text-primary" />
-                    <h2 className="text-lg font-semibold">Recent Searches</h2>
+              <TabsContent value="posts" className="mt-0">
+                {postResults.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No posts found</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setRecentSearchList([])}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {recentSearchList.map((search, index) => (
-                    <div
+                ) : (
+                  postResults.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      id={post.id}
+                      title=""
+                      content={post.content}
+                      author={post.profiles?.full_name || post.profiles?.username || 'Unknown'}
+                      authorUsername={post.profiles?.username}
+                      authorAvatar={post.profiles?.avatar_url}
+                      authorBadge={post.profiles?.badge_type}
+                      likes={(post.likes_count || 0).toString()}
+                      comments={(post.comments_count || 0).toString()}
+                      retweets={(post.retweets_count || 0).toString()}
+                      shares={(post.shares_count || 0).toString()}
+                      timestamp={new Date(post.created_at).toLocaleDateString()}
+                      image={post.image_url}
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent value="hashtags" className="mt-0">
+                {hashtagResults.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Hash className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>No hashtags found</p>
+                  </div>
+                ) : Array.isArray(hashtagResults) && hashtagResults[0]?.tag ? (
+                  hashtagResults.map((item: any, index: number) => (
+                    <Card
                       key={index}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/50 transition-colors group"
+                      className="p-4 hover:bg-muted/50 transition-colors cursor-pointer border-x-0 border-t-0 last:border-b-0 rounded-none"
+                      onClick={() => setSearchQuery(item.tag)}
                     >
-                      <button
-                        onClick={() => setSearchQuery(search)}
-                        className="flex items-center gap-3 flex-1 text-left"
-                      >
-                        <Clock size={16} className="text-muted-foreground" />
-                        <p className="font-medium">{search}</p>
-                      </button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeRecentSearch(index)}
-                      >
-                        <X size={14} />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <Hash className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{item.tag}</p>
+                          <p className="text-sm text-muted-foreground">{item.count} posts</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                ) : (
+                  hashtagResults.map((post: any) => (
+                    <PostCard
+                      key={post.id}
+                      id={post.id}
+                      title=""
+                      content={post.content}
+                      author={post.profiles?.full_name || post.profiles?.username || 'Unknown'}
+                      authorUsername={post.profiles?.username}
+                      authorAvatar={post.profiles?.avatar_url}
+                      authorBadge={post.profiles?.badge_type}
+                      likes={(post.likes_count || 0).toString()}
+                      comments={(post.comments_count || 0).toString()}
+                      retweets={(post.retweets_count || 0).toString()}
+                      shares={(post.shares_count || 0).toString()}
+                      timestamp={new Date(post.created_at).toLocaleDateString()}
+                      image={post.image_url}
+                    />
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        ) : (
+          /* Trending Content When No Search */
+          <div className="space-y-4">
+            <div className="px-4 py-3 bg-muted/30 border-b">
+              <h2 className="text-lg font-bold">Trending Posts</h2>
+            </div>
+            {trendingPosts.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No trending posts yet</p>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No recent searches</p>
-              </div>
+              trendingPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  id={post.id}
+                  title=""
+                  content={post.content}
+                  author={post.profiles?.full_name || post.profiles?.username || 'Unknown'}
+                  authorUsername={post.profiles?.username}
+                  authorAvatar={post.profiles?.avatar_url}
+                  authorBadge={post.profiles?.badge_type}
+                  likes={(post.likes_count || 0).toString()}
+                  comments={(post.comments_count || 0).toString()}
+                  retweets={(post.retweets_count || 0).toString()}
+                  shares={(post.shares_count || 0).toString()}
+                  timestamp={new Date(post.created_at).toLocaleDateString()}
+                  image={post.image_url}
+                />
+              ))
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -650,12 +650,13 @@ export default function Profile() {
 
               {/* Row 5: Action Buttons */}
               <div className="flex gap-2">
-                <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold">
-                      Edit Profile
-                    </Button>
-                  </DialogTrigger>
+                {isOwnProfile ? (
+                  <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold">
+                        Edit Profile
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Edit Profile</DialogTitle>
@@ -771,6 +772,12 @@ export default function Profile() {
                     </div>
                   </DialogContent>
                 </Dialog>
+                ) : (
+                  <Button variant="default" size="sm" className="flex-1 h-8 text-sm font-semibold">
+                    <UserPlus className="w-4 h-4 mr-1" />
+                    Follow
+                  </Button>
+                )}
                 <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold" onClick={copyProfileLink}>
                   Share Profile
                 </Button>
@@ -856,13 +863,14 @@ export default function Profile() {
                 </div>
                 
                 <div className="flex gap-2 flex-shrink-0">
-                  <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Edit2 size={16} className="mr-2" />
-                        Edit Profile
-                      </Button>
-                    </DialogTrigger>
+                  {isOwnProfile ? (
+                    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Edit2 size={16} className="mr-2" />
+                          Edit Profile
+                        </Button>
+                      </DialogTrigger>
                     <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Edit Profile</DialogTitle>
@@ -903,6 +911,12 @@ export default function Profile() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  ) : (
+                    <Button variant="default" size="sm">
+                      <UserPlus size={16} className="mr-2" />
+                      Follow
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm">
