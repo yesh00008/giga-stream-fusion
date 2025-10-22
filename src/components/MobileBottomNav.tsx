@@ -1,8 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/lib/auth-context";
 
 export function MobileBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/" && location.pathname === "/") return true;
@@ -35,10 +38,8 @@ export function MobileBottomNav() {
       path: "/feed", 
       icon: () => (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1"/>
-          <rect x="14" y="3" width="7" height="7" rx="1"/>
-          <rect x="14" y="14" width="7" height="7" rx="1"/>
-          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
         </svg>
       ), 
       label: "Feed" 
@@ -56,11 +57,12 @@ export function MobileBottomNav() {
     { 
       path: "/profile", 
       icon: () => (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <circle cx="12" cy="10" r="3" />
-          <path d="M7 20.662V19a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1.662" />
-        </svg>
+        <Avatar className="h-6 w-6">
+          <AvatarImage src={user?.user_metadata?.avatar_url} />
+          <AvatarFallback className="text-xs bg-gradient-to-br from-primary to-accent text-white">
+            {user?.user_metadata?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+          </AvatarFallback>
+        </Avatar>
       ), 
       label: "Profile" 
     },

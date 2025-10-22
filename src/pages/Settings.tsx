@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Bell, Shield, Globe, Palette, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EncryptionSettings } from "@/components/EncryptionSettings";
 
 export default function Settings() {
   return (
@@ -112,6 +113,9 @@ export default function Settings() {
           </TabsContent>
 
           <TabsContent value="privacy" className="space-y-4 mt-6">
+            {/* End-to-End Encryption Settings */}
+            <EncryptionSettings />
+
             <Card className="p-6 gradient-card space-y-6">
               <div className="flex items-center justify-between">
                 <div>

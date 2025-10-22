@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { MobileProfileHeader } from "@/components/MobileProfileHeader";
+import { useAuth } from "@/lib/auth-context";
 
 const trendingSearches = [
   { query: "React Tutorial", count: "2.5M" },
@@ -38,6 +40,7 @@ const popularHashtags = [
 ];
 
 export default function Search() {
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [recentSearchList, setRecentSearchList] = useState(recentSearches);
@@ -56,6 +59,7 @@ export default function Search() {
 
   return (
     <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <MobileProfileHeader username={user?.user_metadata?.username || user?.email?.split('@')[0] || 'user'} />
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Search Header */}
         <div className="space-y-4">
