@@ -81,7 +81,6 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
-  const [activeTab, setActiveTab] = useState("for-you");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -104,7 +103,7 @@ export default function Feed() {
 
   useEffect(() => {
     fetchPosts();
-  }, [activeTab]);
+  }, []);
 
   const fetchPosts = async () => {
     try {
@@ -400,24 +399,6 @@ export default function Feed() {
       <div className="flex flex-col lg:flex-row max-w-7xl mx-auto">
         {/* Main Feed */}
         <div className="flex-1 w-full max-w-full lg:max-w-2xl lg:border-r">
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-center border-b border-border rounded-none h-auto p-0 bg-transparent sticky top-0 lg:top-14 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <TabsTrigger 
-              value="for-you" 
-              className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-4 font-semibold"
-            >
-              For You
-            </TabsTrigger>
-            <TabsTrigger 
-              value="following" 
-              className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none py-4 font-semibold"
-            >
-              Following
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="for-you" className="mt-0">
             {/* Create Post Section - Twitter/Threads Style */}
             <div className="p-3 sm:p-4 border-b border-border bg-background">
               <div className="flex gap-3">
@@ -900,14 +881,6 @@ export default function Feed() {
                 ))
               )}
             </div>
-          </TabsContent>
-
-          <TabsContent value="following" className="mt-0">
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Follow people to see their posts here!</p>
-            </div>
-          </TabsContent>
-        </Tabs>
         </div>
 
         {/* Trending Sidebar - Desktop Only */}
