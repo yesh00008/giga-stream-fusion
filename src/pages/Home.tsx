@@ -29,7 +29,7 @@ interface Post {
     username: string;
     avatar_url: string | null;
     badge_type: string | null;
-    is_verified?: boolean;
+    verified?: boolean;
   };
   is_liked?: boolean;
   is_retweeted?: boolean;
@@ -53,7 +53,7 @@ interface Reel {
     full_name: string;
     username: string;
     avatar_url: string | null;
-    is_verified?: boolean;
+    verified?: boolean;
   };
   is_liked?: boolean;
 }
@@ -93,7 +93,7 @@ export default function Home() {
             full_name,
             avatar_url,
             badge_type,
-            is_verified
+            verified
           )
         `)
         .order('created_at', { ascending: false })
@@ -149,7 +149,7 @@ export default function Home() {
             username,
             full_name,
             avatar_url,
-            is_verified
+            verified
           )
         `)
         .order('created_at', { ascending: false })
@@ -203,7 +203,7 @@ export default function Home() {
             full_name,
             avatar_url,
             badge_type,
-            is_verified
+            verified
           )
         `)
         .order('likes_count', { ascending: false })
@@ -279,7 +279,7 @@ export default function Home() {
             full_name,
             avatar_url,
             badge_type,
-            is_verified
+            verified
           )
         `)
         .in('user_id', followingIds)

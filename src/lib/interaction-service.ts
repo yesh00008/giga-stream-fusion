@@ -595,7 +595,7 @@ export async function getPosts(userId?: string, limit = 50): Promise<any[]> {
           full_name,
           avatar_url,
           badge_type,
-          is_verified
+          verified
         )
       `)
       .order('created_at', { ascending: false })
