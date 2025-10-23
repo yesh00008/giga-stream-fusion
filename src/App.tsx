@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { MainLayout } from "./components/MainLayout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import Home from "./pages/Home";
+import Feed from "./pages/Feed";
 import Watch from "./pages/Watch";
 import Studio from "./pages/Studio";
 import Upload from "./pages/Upload";
@@ -55,7 +55,7 @@ const App = () => (
             
             {/* Main App Routes - With Layout */}
           <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Feed />} />
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/post/:id" element={<PostDetail />} />
             <Route path="/shorts" element={<Shorts />} />
