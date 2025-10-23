@@ -8,7 +8,7 @@ import { toggleLike, toggleRetweet, toggleBookmark, incrementShareCount, getPost
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, Sparkles, Video, TrendingUp, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 
 interface Post {
@@ -82,10 +82,50 @@ export default function Home() {
       setLoading(true);
       setError(null);
       
-      // Fetch latest posts from database using interaction-service
-      const data = await getPosts(user?.id, 50);
+      // Fetch posts with explicit profile join to avoid Anonymous users
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles!posts_user_id_fkey (
+            id,
+            username,
+            full_name,
+            avatar_url,
+            badge_type,
+            is_verified
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (postsError) throw postsError;
+
+      // Get user's interactions if logged in
+      let userLikes: string[] = [];
+      let userBookmarks: string[] = [];
+      let userRetweets: string[] = [];
       
-      setPosts(data);
+      if (user?.id) {
+        const [likes, bookmarks, retweets] = await Promise.all([
+          supabase.from('post_likes').select('post_id').eq('user_id', user.id),
+          supabase.from('bookmarks').select('post_id').eq('user_id', user.id),
+          supabase.from('retweets').select('post_id').eq('user_id', user.id),
+        ]);
+        
+        userLikes = likes.data?.map(l => l.post_id) || [];
+        userBookmarks = bookmarks.data?.map(b => b.post_id) || [];
+        userRetweets = retweets.data?.map(r => r.post_id) || [];
+      }
+
+      const postsWithStatus = (postsData || []).map(post => ({
+        ...post,
+        is_liked: userLikes.includes(post.id),
+        is_bookmarked: userBookmarks.includes(post.id),
+        is_retweeted: userRetweets.includes(post.id),
+      }));
+      
+      setPosts(postsWithStatus);
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again.');
@@ -104,7 +144,7 @@ export default function Home() {
         .from('reels')
         .select(`
           *,
-          profiles:user_id (
+          profiles!reels_user_id_fkey (
             id,
             username,
             full_name,
@@ -157,7 +197,7 @@ export default function Home() {
         .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles!posts_user_id_fkey (
             id,
             username,
             full_name,
@@ -233,7 +273,7 @@ export default function Home() {
         .from('posts')
         .select(`
           *,
-          profiles:user_id (
+          profiles!posts_user_id_fkey (
             id,
             username,
             full_name,
@@ -476,11 +516,11 @@ export default function Home() {
     return postsList.map((post, index) => (
       <motion.div
         key={post.id}
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ 
-          duration: 0.3, 
-          delay: Math.min(index * 0.05, 0.3),
+          duration: 0.2, 
+          delay: Math.min(index * 0.02, 0.15),
           ease: 'easeOut'
         }}
       >
@@ -488,10 +528,10 @@ export default function Home() {
           id={post.id}
           title=""
           content={post.content}
-          author={post.profiles.full_name || 'Anonymous'}
-          authorUsername={post.profiles.username}
-          authorAvatar={post.profiles.avatar_url || undefined}
-          authorBadge={post.profiles.badge_type}
+          author={post.profiles?.full_name || post.profiles?.username || 'User'}
+          authorUsername={post.profiles?.username || ''}
+          authorAvatar={post.profiles?.avatar_url || undefined}
+          authorBadge={post.profiles?.badge_type}
           likes={(post.likes_count || 0).toString()}
           comments={(post.comments_count || 0).toString()}
           retweets={(post.retweets_count || 0).toString()}
@@ -612,15 +652,12 @@ export default function Home() {
 
             {/* For You Tab */}
             <TabsContent value="for-you" className="mt-0">
-              <AnimatePresence mode="wait">
-                {renderPostsList(posts, loading)}
-              </AnimatePresence>
+              {renderPostsList(posts, loading)}
             </TabsContent>
 
             {/* Reels Tab */}
             <TabsContent value="reels" className="mt-0">
-              <AnimatePresence mode="wait">
-                {reelsLoading ? (
+              {reelsLoading ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
                     {Array.from({ length: 6 }).map((_, i) => (
                       <Skeleton key={i} className="aspect-[9/16] rounded-lg" />
@@ -637,20 +674,16 @@ export default function Home() {
                     {reels.map(renderReelCard)}
                   </div>
                 )}
-              </AnimatePresence>
             </TabsContent>
 
             {/* Trending Tab */}
             <TabsContent value="trending" className="mt-0">
-              <AnimatePresence mode="wait">
-                {renderPostsList(trendingPosts, trendingLoading)}
-              </AnimatePresence>
+              {renderPostsList(trendingPosts, trendingLoading)}
             </TabsContent>
 
             {/* Following Tab */}
             <TabsContent value="following" className="mt-0">
-              <AnimatePresence mode="wait">
-                {!user ? (
+              {!user ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p className="text-lg">Sign in to see posts from people you follow</p>
@@ -676,7 +709,6 @@ export default function Home() {
                 ) : (
                   renderPostsList(followingPosts, followingLoading)
                 )}
-              </AnimatePresence>
             </TabsContent>
           </Tabs>
         </div>

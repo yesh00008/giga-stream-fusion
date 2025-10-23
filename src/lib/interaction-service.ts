@@ -584,16 +584,18 @@ export async function getPostById(postId: string, userId?: string): Promise<any>
  */
 export async function getPosts(userId?: string, limit = 50): Promise<any[]> {
   try {
+    // Use explicit foreign key constraint to ensure proper profile join
     const { data, error } = await supabase
       .from('posts')
       .select(`
         *,
-        profiles:user_id (
+        profiles!posts_user_id_fkey (
           id,
           username,
           full_name,
           avatar_url,
-          badge_type
+          badge_type,
+          is_verified
         )
       `)
       .order('created_at', { ascending: false })
