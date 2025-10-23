@@ -9,6 +9,9 @@ export function MainLayout() {
   
   // Show header on mobile ONLY for home page, always show on desktop
   const showHeaderOnMobile = location.pathname === '/';
+  
+  // Hide bottom nav on messages page
+  const hideBottomNav = location.pathname === '/messages';
 
   return (
     <SidebarProvider>
@@ -24,7 +27,7 @@ export function MainLayout() {
           <main className="flex-1 overflow-auto w-full">
             <Outlet />
           </main>
-          <MobileBottomNav />
+          {!hideBottomNav && <MobileBottomNav />}
         </div>
       </div>
     </SidebarProvider>

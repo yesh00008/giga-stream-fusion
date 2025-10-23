@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search as SearchIcon, User, Hash, FileText, Video, Loader2, UserPlus, UserCheck } from "lucide-react";
+import { Search as SearchIcon, User, Hash, FileText, Video, Loader2, UserPlus, MessageSquare } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -245,14 +245,28 @@ export default function Search() {
               variant={isFollowing ? "outline" : "default"}
               onClick={(e) => {
                 e.stopPropagation();
-                handleFollow(profile.id);
+                if (isFollowing) {
+                  navigate('/messages', { 
+                    state: { 
+                      openChat: {
+                        id: profile.id,
+                        username: profile.username,
+                        full_name: profile.full_name,
+                        avatar_url: profile.avatar_url,
+                        is_online: profile.is_online
+                      }
+                    }
+                  });
+                } else {
+                  handleFollow(profile.id);
+                }
               }}
               className="flex-shrink-0"
             >
               {isFollowing ? (
                 <>
-                  <UserCheck className="w-4 h-4 mr-1" />
-                  Following
+                  <MessageSquare className="w-4 h-4 mr-1" />
+                  Message
                 </>
               ) : (
                 <>

@@ -1,19 +1,24 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, Send, Image as ImageIcon, X, Settings, ArrowLeft, MoreVertical } from "lucide-react";
+import { Search, Send, Image as ImageIcon, X, ArrowLeft, Check, UserPlus, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import {
   getConversations,
+  getMessageRequests,
   getConversation,
   sendMessage,
   markMessagesAsRead,
   searchUsersForMessaging,
+  acceptMessageRequest,
+  deleteMessageRequest,
   subscribeToMessages,
   uploadMessageImage,
   type Conversation,
@@ -21,9 +26,12 @@ import {
 } from "@/lib/message-service";
 import { formatDistanceToNow } from "date-fns";
 
-export default function MessagesPage() {
+export default function Messages() {
   const { user } = useAuth();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<"messages" | "requests">("messages");
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messageRequests, setMessageRequests] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<MessageWithProfiles[]>([]);
   const [messageInput, setMessageInput] = useState("");
@@ -36,10 +44,51 @@ export default function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load conversations on mount
+  // Handle opening chat from navigation state - RUNS IMMEDIATELY
+  useEffect(() => {
+    const state = location.state as any;
+    console.log('📍 Location state:', state);
+    
+    if (state?.openChat && user?.id) {
+      const chatUser = state.openChat;
+      
+      console.log('🔵 Opening direct chat with:', chatUser);
+      
+      // Create conversation object for the user
+      const newConversation: Conversation = {
+        id: chatUser.id,
+        other_user_id: chatUser.id,
+        other_user_username: chatUser.username,
+        other_user_name: chatUser.full_name,
+        other_user_avatar: chatUser.avatar_url,
+        other_user_online: chatUser.is_online || false,
+        content: '',
+        sender_id: user.id,
+        receiver_id: chatUser.id,
+        read: true,
+        is_request: false,
+        created_at: new Date().toISOString(),
+        is_following: true,
+        is_follower: true
+      };
+      
+      console.log('✅ Setting selected conversation:', newConversation);
+      
+      // Set the conversation which will trigger message loading
+      setSelectedConversation(newConversation);
+      
+      // Clear the navigation state after a short delay to ensure it's processed
+      setTimeout(() => {
+        window.history.replaceState({}, document.title);
+      }, 100);
+    }
+  }, [location, user?.id]);
+
+  // Load conversations and requests
   useEffect(() => {
     if (user?.id) {
       loadConversations();
+      loadMessageRequests();
     }
   }, [user?.id]);
 
@@ -47,7 +96,9 @@ export default function MessagesPage() {
   useEffect(() => {
     if (selectedConversation && user?.id) {
       loadMessages(selectedConversation.other_user_id);
-      markMessagesAsRead(selectedConversation.other_user_id);
+      if (!selectedConversation.is_request) {
+        markMessagesAsRead(selectedConversation.other_user_id);
+      }
     }
   }, [selectedConversation, user?.id]);
 
@@ -61,7 +112,9 @@ export default function MessagesPage() {
       (newMessage) => {
         setMessages(prev => [...prev, newMessage as any]);
         scrollToBottom();
-        markMessagesAsRead(selectedConversation.other_user_id);
+        if (!selectedConversation.is_request) {
+          markMessagesAsRead(selectedConversation.other_user_id);
+        }
       }
     );
 
@@ -70,17 +123,17 @@ export default function MessagesPage() {
     };
   }, [selectedConversation, user?.id]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Search users
+  // Search users (followers/following only)
   useEffect(() => {
     const debounce = setTimeout(async () => {
-      if (searchQuery.trim().length > 0) {
+      if (searchQuery.trim().length > 0 && user?.id) {
         setIsSearching(true);
-        const { data } = await searchUsersForMessaging(searchQuery);
+        const { data } = await searchUsersForMessaging(searchQuery, user.id);
         setSearchResults(data || []);
         setIsSearching(false);
       } else {
@@ -89,7 +142,7 @@ export default function MessagesPage() {
     }, 300);
 
     return () => clearTimeout(debounce);
-  }, [searchQuery]);
+  }, [searchQuery, user?.id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -98,12 +151,29 @@ export default function MessagesPage() {
   const loadConversations = async () => {
     if (!user?.id) return;
     const { data } = await getConversations(user.id);
-    if (data) setConversations(data);
+    if (data) {
+      // Filter out requests
+      const regularConvos = data.filter(c => !c.is_request || c.sender_id === user.id);
+      setConversations(regularConvos);
+    }
+  };
+
+  const loadMessageRequests = async () => {
+    if (!user?.id) return;
+    const { data } = await getMessageRequests(user.id);
+    if (data) setMessageRequests(data);
   };
 
   const loadMessages = async (otherUserId: string) => {
-    const { data } = await getConversation(otherUserId);
-    if (data) setMessages(data);
+    console.log('📩 Loading messages with user ID:', otherUserId);
+    const { data, error } = await getConversation(otherUserId);
+    if (error) {
+      console.error('❌ Error loading messages:', error);
+      toast.error('Failed to load messages');
+    } else {
+      console.log('✅ Loaded', data?.length || 0, 'messages');
+      setMessages(data || []);
+    }
   };
 
   const handleSendMessage = async () => {
@@ -115,23 +185,21 @@ export default function MessagesPage() {
     try {
       let imageUrl: string | undefined;
 
-      // Upload image if present
       if (imageFile) {
         const { url, error } = await uploadMessageImage(imageFile, user.id);
         if (error) throw new Error("Failed to upload image");
         imageUrl = url || undefined;
       }
 
-      // Send message
       const { data, error } = await sendMessage(
         selectedConversation.other_user_id,
         messageInput.trim(),
+        user.id,
         imageUrl
       );
 
       if (error) throw error;
 
-      // Add message to local state
       if (data) {
         setMessages(prev => [...prev, {
           ...data,
@@ -144,18 +212,46 @@ export default function MessagesPage() {
         }]);
       }
 
-      // Clear input
       setMessageInput("");
       setImageFile(null);
       setImagePreview(null);
-      
-      // Reload conversations to update last message
       loadConversations();
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleAcceptRequest = async (senderId: string) => {
+    if (!user?.id) return;
+    
+    const { error } = await acceptMessageRequest(senderId, user.id);
+    if (error) {
+      toast.error("Failed to accept request");
+      return;
+    }
+
+    toast.success("Message request accepted");
+    loadMessageRequests();
+    loadConversations();
+  };
+
+  const handleDeleteRequest = async (senderId: string) => {
+    if (!user?.id) return;
+    
+    const { error } = await deleteMessageRequest(senderId, user.id);
+    if (error) {
+      toast.error("Failed to delete request");
+      return;
+    }
+
+    toast.success("Message request deleted");
+    loadMessageRequests();
+    
+    if (selectedConversation?.other_user_id === senderId) {
+      setSelectedConversation(null);
     }
   };
 
@@ -183,7 +279,10 @@ export default function MessagesPage() {
       sender_id: '',
       receiver_id: '',
       read: true,
-      created_at: new Date().toISOString()
+      is_request: false,
+      created_at: new Date().toISOString(),
+      is_following: userProfile.is_following,
+      is_follower: userProfile.is_follower
     };
     setSelectedConversation(newConversation);
     setSearchQuery("");
@@ -191,9 +290,58 @@ export default function MessagesPage() {
     setMessages([]);
   };
 
+  const ConversationItem = ({ conversation, onClick }: { conversation: Conversation; onClick: () => void }) => (
+    <motion.button
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      onClick={onClick}
+      className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors ${
+        selectedConversation?.other_user_id === conversation.other_user_id
+          ? 'bg-muted'
+          : 'hover:bg-muted/50'
+      }`}
+    >
+      <div className="relative">
+        <Avatar className="w-12 h-12">
+          <AvatarImage src={conversation.other_user_avatar} />
+          <AvatarFallback>{conversation.other_user_name?.[0] || '?'}</AvatarFallback>
+        </Avatar>
+        {conversation.other_user_online && (
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+        )}
+      </div>
+      <div className="flex-1 text-left min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-sm truncate">{conversation.other_user_name}</p>
+            {conversation.is_follower && conversation.is_following && (
+              <Badge variant="secondary" className="text-xs">Mutual</Badge>
+            )}
+            {conversation.is_follower && !conversation.is_following && (
+              <Badge variant="outline" className="text-xs">Follower</Badge>
+            )}
+            {!conversation.is_follower && conversation.is_following && (
+              <Badge variant="outline" className="text-xs">Following</Badge>
+            )}
+          </div>
+          <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+            {formatDistanceToNow(new Date(conversation.created_at), { addSuffix: true })}
+          </span>
+        </div>
+        <p className={`text-xs truncate ${conversation.read || conversation.sender_id === user?.id ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
+          {conversation.sender_id === user?.id && <span className="text-muted-foreground">You: </span>}
+          {conversation.content}
+        </p>
+      </div>
+      {!conversation.read && conversation.receiver_id === user?.id && (
+        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+      )}
+    </motion.button>
+  );
+
   return (
     <div className="flex-1 flex overflow-hidden">
-      {/* Conversations List */}
+      {/* Sidebar */}
       <div className={`${selectedConversation ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-96 border-r border-border`}>
         {/* Header */}
         <div className="p-4 border-b border-border">
@@ -203,7 +351,7 @@ export default function MessagesPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input
-              placeholder="Search messages or people..."
+              placeholder="Search followers/following..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -211,82 +359,137 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* Search Results or Conversations */}
-        <ScrollArea className="flex-1">
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
+          <TabsList className="w-full rounded-none border-b">
+            <TabsTrigger value="messages" className="flex-1">
+              <MessageSquare size={16} className="mr-2" />
+              Messages
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="flex-1">
+              <UserPlus size={16} className="mr-2" />
+              Requests
+              {messageRequests.length > 0 && (
+                <Badge variant="destructive" className="ml-2 h-5 min-w-5 flex items-center justify-center px-1">
+                  {messageRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Search Results */}
           {searchQuery && searchResults.length > 0 ? (
-            <div className="p-2">
-              <p className="text-xs text-muted-foreground px-3 py-2 font-medium">Search Results</p>
-              {searchResults.map((userProfile) => (
-                <button
-                  key={userProfile.id}
-                  onClick={() => handleStartConversation(userProfile)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg transition-colors"
-                >
-                  <Avatar className="w-12 h-12">
-                    <AvatarImage src={userProfile.avatar_url} />
-                    <AvatarFallback>{userProfile.full_name?.[0] || '?'}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="font-semibold text-sm truncate">{userProfile.full_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">@{userProfile.username}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-2">
+                <p className="text-xs text-muted-foreground px-3 py-2 font-medium">Search Results</p>
+                {searchResults.map((userProfile) => (
+                  <button
+                    key={userProfile.id}
+                    onClick={() => handleStartConversation(userProfile)}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <Avatar className="w-12 h-12">
+                      <AvatarImage src={userProfile.avatar_url} />
+                      <AvatarFallback>{userProfile.full_name?.[0] || '?'}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm truncate">{userProfile.full_name}</p>
+                        {userProfile.is_follower && userProfile.is_following && (
+                          <Badge variant="secondary" className="text-xs">Mutual</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">@{userProfile.username}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           ) : searchQuery ? (
             <div className="p-8 text-center text-muted-foreground">
-              {isSearching ? 'Searching...' : 'No users found'}
-            </div>
-          ) : conversations.length > 0 ? (
-            <div className="p-2">
-              {conversations.map((conversation) => (
-                <motion.button
-                  key={conversation.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => setSelectedConversation(conversation)}
-                  className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                    selectedConversation?.other_user_id === conversation.other_user_id
-                      ? 'bg-muted'
-                      : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <div className="relative">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={conversation.other_user_avatar} />
-                      <AvatarFallback>{conversation.other_user_name?.[0] || '?'}</AvatarFallback>
-                    </Avatar>
-                    {conversation.other_user_online && (
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-                    )}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-semibold text-sm truncate">{conversation.other_user_name}</p>
-                      <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
-                        {formatDistanceToNow(new Date(conversation.created_at), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className={`text-xs truncate ${conversation.read ? 'text-muted-foreground' : 'text-foreground font-medium'}`}>
-                      {conversation.content}
-                    </p>
-                  </div>
-                  {!conversation.read && conversation.receiver_id === user?.id && (
-                    <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
-                  )}
-                </motion.button>
-              ))}
+              {isSearching ? 'Searching...' : 'No users found in your followers/following'}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <Send size={48} className="text-muted-foreground/30 mb-4" />
-              <p className="text-muted-foreground">No messages yet</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Search for people to start a conversation
-              </p>
-            </div>
+            <>
+              {/* Messages Tab */}
+              <TabsContent value="messages" className="flex-1 m-0">
+                {conversations.length > 0 ? (
+                  <ScrollArea className="h-full">
+                    <div className="p-2">
+                      {conversations.map((conversation) => (
+                        <ConversationItem
+                          key={conversation.id}
+                          conversation={conversation}
+                          onClick={() => setSelectedConversation(conversation)}
+                        />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                    <MessageSquare size={48} className="text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">No messages yet</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Search for followers to start chatting
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Requests Tab */}
+              <TabsContent value="requests" className="flex-1 m-0">
+                {messageRequests.length > 0 ? (
+                  <ScrollArea className="h-full">
+                    <div className="p-2">
+                      {messageRequests.map((request) => (
+                        <div key={request.id} className="p-3 mb-2 border border-border rounded-lg">
+                          <div className="flex items-start gap-3 mb-3">
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={request.other_user_avatar} />
+                              <AvatarFallback>{request.other_user_name?.[0] || '?'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm">{request.other_user_name}</p>
+                              <p className="text-xs text-muted-foreground">@{request.other_user_username}</p>
+                            </div>
+                          </div>
+                          <p className="text-sm mb-3 text-muted-foreground line-clamp-2">{request.content}</p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptRequest(request.other_user_id)}
+                              className="flex-1"
+                            >
+                              <Check size={14} className="mr-1" />
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeleteRequest(request.other_user_id)}
+                              className="flex-1"
+                            >
+                              <X size={14} className="mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                    <UserPlus size={48} className="text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground">No message requests</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Messages from non-followers will appear here
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            </>
           )}
-        </ScrollArea>
+        </Tabs>
       </div>
 
       {/* Chat Area */}
@@ -307,15 +510,17 @@ export default function MessagesPage() {
               <AvatarFallback>{selectedConversation.other_user_name?.[0] || '?'}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-semibold">{selectedConversation.other_user_name}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">{selectedConversation.other_user_name}</p>
+                {selectedConversation.is_follower && selectedConversation.is_following && (
+                  <Badge variant="secondary" className="text-xs">Mutual</Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">
                 @{selectedConversation.other_user_username}
                 {selectedConversation.other_user_online && <span className="text-green-500"> • Online</span>}
               </p>
             </div>
-            <Button variant="ghost" size="icon">
-              <MoreVertical size={20} />
-            </Button>
           </div>
 
           {/* Messages */}
@@ -431,7 +636,7 @@ export default function MessagesPage() {
             <Send size={64} className="text-muted-foreground/30 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Select a conversation</h2>
             <p className="text-muted-foreground">
-              Choose a message from the left or search for someone to start chatting
+              Choose a message or search for followers to start chatting
             </p>
           </div>
         </div>

@@ -18,7 +18,7 @@ import Trending from "./pages/Trending";
 import Settings from "./pages/Settings";
 import Channel from "./pages/Channel";
 import Live from "./pages/Live";
-import Messages from "./pages/Messages";
+import Messages from "./pages/MessagesInstagram";
 import Notifications from "./pages/Notifications";
 import Playlists from "./pages/Playlists";
 import SearchResults from "./pages/SearchResults";

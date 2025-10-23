@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     content TEXT NOT NULL,
     image_url TEXT,
     read BOOLEAN DEFAULT false NOT NULL,
+    is_request BOOLEAN DEFAULT false NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );

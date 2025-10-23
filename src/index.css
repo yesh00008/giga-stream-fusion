@@ -5,6 +5,21 @@
 /* YouTube Glassmorphism Theme - Modern glass effects */
 
 @layer base {
+  /* Hide scrollbar globally but keep scroll functionality */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  /* Ensure smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     /* Claude-inspired warm coral theme with clean white backgrounds */
     --background: 0 0% 100%;
@@ -178,5 +193,49 @@
     font-family: 'Pacifico', cursive;
     font-weight: 400;
     letter-spacing: 1px;
+  }
+
+  /* Pulse animation for pinned message highlight - only on message bubble */
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0), 0 0 30px rgba(59, 130, 246, 0);
+      border-color: rgba(59, 130, 246, 1);
+    }
+  }
+
+  /* Fast fade-out animation for unsent messages */
+  @keyframes fadeOutMessage {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+
+  .message-unsending {
+    animation: fadeOutMessage 0.3s ease-out forwards;
+  }
+
+  /* Pulse for online status indicator */
+  @keyframes pulse-online {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.1);
+    }
+  }
+
+  .status-pulse {
+    animation: pulse-online 2s ease-in-out infinite;
   }
 }

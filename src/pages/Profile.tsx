@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, X, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, UserCheck, Heart } from "lucide-react";
+import { Settings2, Share2, MapPin, Link as LinkIcon, Calendar, Edit2, Pen, Mail, Phone, Globe, Video, BarChart3, Users, Shield, Bell, Lock, Star, Bookmark, Award, TrendingUp, MessageSquare, Copy, Check, X, MoreVertical, Upload, Loader2, RefreshCw, Image as ImageIcon, UserPlus, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -1185,19 +1185,29 @@ export default function Profile() {
                     variant={isFollowing ? "outline" : "default"} 
                     size="sm" 
                     className="flex-1 h-8 text-sm font-semibold"
-                    onClick={handleFollow}
+                    onClick={isFollowing ? () => navigate('/messages', {
+                      state: {
+                        openChat: {
+                          id: profile.id,
+                          username: profile.username,
+                          full_name: profile.name,
+                          avatar_url: profile.avatar_url,
+                          is_online: profile.is_online
+                        }
+                      }
+                    }) : handleFollow}
                     disabled={followLoading}
                   >
                     {followLoading ? (
                       <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                     ) : isFollowing ? (
-                      <UserCheck className="w-4 h-4 mr-1" />
+                      <MessageSquare className="w-4 h-4 mr-1" />
                     ) : followRequestPending ? (
                       <Loader2 className="w-4 h-4 mr-1" />
                     ) : (
                       <UserPlus className="w-4 h-4 mr-1" />
                     )}
-                    {isFollowing ? 'Following' : followRequestPending ? 'Requested' : 'Follow'}
+                    {isFollowing ? 'Message' : followRequestPending ? 'Requested' : 'Follow'}
                   </Button>
                 )}
                 <Button variant="outline" size="sm" className="flex-1 h-8 text-sm font-semibold" onClick={copyProfileLink}>
@@ -1342,19 +1352,29 @@ export default function Profile() {
                     <Button 
                       variant={isFollowing ? "outline" : "default"} 
                       size="sm"
-                      onClick={handleFollow}
+                      onClick={isFollowing ? () => navigate('/messages', {
+                        state: {
+                          openChat: {
+                            id: profile.id,
+                            username: profile.username,
+                            full_name: profile.name,
+                            avatar_url: profile.avatar_url,
+                            is_online: profile.is_online
+                          }
+                        }
+                      }) : handleFollow}
                       disabled={followLoading}
                     >
                       {followLoading ? (
                         <Loader2 size={16} className="mr-2 animate-spin" />
                       ) : isFollowing ? (
-                        <UserCheck size={16} className="mr-2" />
+                        <MessageSquare size={16} className="mr-2" />
                       ) : followRequestPending ? (
                         <Loader2 size={16} className="mr-2" />
                       ) : (
                         <UserPlus size={16} className="mr-2" />
                       )}
-                      {followLoading ? 'Loading...' : isFollowing ? 'Following' : followRequestPending ? 'Requested' : 'Follow'}
+                      {followLoading ? 'Loading...' : isFollowing ? 'Message' : followRequestPending ? 'Requested' : 'Follow'}
                     </Button>
                   )}
                   <DropdownMenu>
@@ -1608,11 +1628,30 @@ export default function Profile() {
                               variant={isFollowingThisUser ? "outline" : "default"}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleFollowFromList(followerProfile.id, isFollowingThisUser);
+                                if (isFollowingThisUser) {
+                                  navigate('/messages', {
+                                    state: {
+                                      openChat: {
+                                        id: followerProfile.id,
+                                        username: followerProfile.username,
+                                        full_name: followerProfile.full_name,
+                                        avatar_url: followerProfile.avatar_url,
+                                        is_online: followerProfile.is_online
+                                      }
+                                    }
+                                  });
+                                } else {
+                                  handleFollowFromList(followerProfile.id, isFollowingThisUser);
+                                }
                               }}
                               className="ml-2"
                             >
-                              {isFollowingThisUser ? 'Following' : 'Follow'}
+                              {isFollowingThisUser ? (
+                                <>
+                                  <MessageSquare size={14} className="mr-1" />
+                                  Message
+                                </>
+                              ) : 'Follow'}
                             </Button>
                           )
                         )}
@@ -1685,14 +1724,28 @@ export default function Profile() {
                             variant={isFollowingThisUser ? "outline" : "default"}
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleFollowFromList(followedProfile.id, isFollowingThisUser);
+                              if (isFollowingThisUser) {
+                                navigate('/messages', {
+                                  state: {
+                                    openChat: {
+                                      id: followedProfile.id,
+                                      username: followedProfile.username,
+                                      full_name: followedProfile.full_name,
+                                      avatar_url: followedProfile.avatar_url,
+                                      is_online: followedProfile.is_online
+                                    }
+                                  }
+                                });
+                              } else {
+                                handleFollowFromList(followedProfile.id, isFollowingThisUser);
+                              }
                             }}
                             className="ml-2"
                           >
                             {isFollowingThisUser ? (
                               <span className="flex items-center gap-1">
-                                <UserCheck size={14} />
-                                Following
+                                <MessageSquare size={14} />
+                                Message
                               </span>
                             ) : 'Follow'}
                           </Button>

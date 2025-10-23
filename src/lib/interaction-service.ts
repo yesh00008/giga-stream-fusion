@@ -557,9 +557,9 @@ export async function getPostById(postId: string, userId?: string): Promise<any>
 
     if (userId) {
       const [likesRes, bookmarksRes, retweetsRes] = await Promise.all([
-        supabase.from('post_likes').select('id').eq('post_id', postId).eq('user_id', userId).single(),
-        supabase.from('bookmarks').select('id').eq('post_id', postId).eq('user_id', userId).single(),
-        supabase.from('retweets').select('id').eq('post_id', postId).eq('user_id', userId).single(),
+        supabase.from('post_likes').select('id').eq('post_id', postId).eq('user_id', userId).maybeSingle(),
+        supabase.from('bookmarks').select('id').eq('post_id', postId).eq('user_id', userId).maybeSingle(),
+        supabase.from('retweets').select('id').eq('post_id', postId).eq('user_id', userId).maybeSingle(),
       ]);
 
       isLiked = !!likesRes.data;
