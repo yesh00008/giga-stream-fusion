@@ -25,7 +25,6 @@ import SearchResults from "./pages/SearchResults";
 import Search from "./pages/Search";
 import Community from "./pages/Community";
 import Library from "./pages/Library";
-import Feed from "./pages/Feed";
 import PostDetail from "./pages/PostDetail";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
